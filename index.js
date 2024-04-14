@@ -277,9 +277,9 @@ app.post('/uploadToS3' , upload.single('file') , (req, res) => {
 
     // Set the AWS credentials and region
 AWS.config.update({
-    accessKeyId: 'AKIAU6GDYAJNRFVBXRGM',
-    secretAccessKey: 'nGDcPRkW/dG636RLMGflIjtFVzJnovEAm1VOiu9L',
-    region: 'ap-south-1' // e.g., 'us-east-1'
+    accessKeyId: process.env.AWS_ACCESSKEY_ID,
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+    region: process.env.AWS_REGION // e.g., 'us-east-1'
   });
   
   // Create S3 service object

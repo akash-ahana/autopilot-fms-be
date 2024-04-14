@@ -1,10 +1,14 @@
 var express = require('express');
+const cors = require('cors');
 var MongoClient = require('mongodb').MongoClient;
 require('dotenv').config();
 var app = express();
 
 // Middleware to parse JSON bodies
 app.use(express.json());
+
+// Use CORS middleware
+app.use(cors());
 
 app.get('/hello', function (req, res) {
    res.send('Hello World');

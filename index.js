@@ -261,60 +261,8 @@ app.post('/createFmsSteps' , (req, res) => {
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //////////----------------AWS S3 -------------------------------------------------------------///////////////////////
-const AWS = require('aws-sdk');
-const multer = require('multer');
-const fs = require('fs');
-const path = require('path');
-
-// Configure Multer for file upload
-const upload = multer({ dest: 'uploads/' }); // Temporary storage
-
-app.post('/uploadToS3' , upload.single('file') , (req, res) => {
-
-    if (!req.file) {
-        return res.status(400).json({ message: 'No file uploaded' });
-      }
-    
-      // Read the file from disk
-      const fileContent = fs.readFileSync(req.file.path);
-    
-
-    // Set the AWS credentials and region
-AWS.config.update({
-    accessKeyId: process.env.AWS_ACCESSKEY_ID,
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-    region: process.env.AWS_REGION // e.g., 'us-east-1'
-  });
-  
-  // Create S3 service object
-  const s3 = new AWS.S3();
-  
-  // Define the parameters for the upload
-  const uploadParams = {
-    //Bucket: 'bci-autopilot-qa-bucket',
-    Bucket: 'bci-lms-uat-s3-student-portal',
-    //Key: 'autopilot-folder/File-Storage.jpeg', // File name in the bucket
-    Key: `uploads/${Date.now()}_${req.file.originalname}`,
-    //Body: fs.createReadStream('./File-Storage.jpeg'),
-    Body: fileContent
-    //ACL: 'public-read' // Optionally, set the ACL to make the file publicly accessible
-  };
-  
-  // Upload the file to the S3 bucket
-  s3.upload(uploadParams, (err, data) => {
-    if (err) {
-      console.error("Upload error:", err);
-      return res.status(500).json({ message: 'Error uploading file' });
-    } else {
-        // Delete the temporary file
-    fs.unlinkSync(req.file.path);
-      console.log("Upload successful:", data.Location);
-      // Return the S3 link to the uploaded file
-    res.json({ link: data.Location });
-    }
-  });
-})
-
+const aws = require("./routes/s3Functions/awsS3functions");
+app.use("/awsS3", aws);
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 

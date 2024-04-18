@@ -34,11 +34,12 @@ How will you do this step
 -create a step id
 -create a fms id as well******************************************
 -steps - start time - by default previous steps actual date time (for now ignore the start time)
--T-X --> duration is some , start time is not previous step time , dropdown i need send all the date time formats as options
+-T-X --> duration is some , start time is not previous step time , dropdown i need send all the date time formats as options -- T is date time and x is number*hr or d
 
 
 
 --location was is not required
+--how - (checklist , reference, none) - either of these 3 
 
 
 

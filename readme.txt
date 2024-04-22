@@ -42,6 +42,11 @@ How will you do this step
 --how - (checklist , reference, none) - either of these 3 
 
 
+--fms initialisdation name - give an option to change it 
+
+ngrok token  -2fHbiUaddJBLgvfxUdXfxCoVbXQ_4KJMC3ATzhSn5EwAq2Xt6
+
+
 
 
 

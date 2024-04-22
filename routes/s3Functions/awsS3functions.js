@@ -1,6 +1,6 @@
 const express = require("express");
 const awsRouter = express.Router();
-
+var MongoClient = require('mongodb').MongoClient;
 const AWS = require('aws-sdk');
 const multer = require('multer');
 const fs = require('fs');

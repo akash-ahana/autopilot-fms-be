@@ -26,7 +26,7 @@ getFms.post('/findSingleFms' , (req, res) => {
     .catch(error => {
         console.error('Error Connecting to MongoDB' , error)
         res.json({
-            "message" : `${req.body.fmsName} Coul Not Find FMS`,
+            "message" : `${req.body.fmsName} Could Not Find FMS`,
             "status" : 500
         })
     })
@@ -50,6 +50,40 @@ getFms.get('/findAllFms' , (req, res) => {
         console.log(documents)
         res.json({
             "message" : [documents],
+            "status" : 200
+        })
+    })
+    .catch(error => {
+        console.error('Error Connecting to MongoDB' , error)
+        res.json({
+            "message" : `${req.body.fmsName} Could Not Find FMS`,
+            "status" : 500
+        })
+    })
+
+})
+
+//find all fms and their forms the user has access to 
+getFms.post('/findFmsQuestionaresForUser' , (req, res) => {
+    //request the name of the FMS
+    //let fmsName = req.body.fmsName;
+
+    MongoClient.connect(process.env.MONGO_DB_STRING)
+    .then(async client => {
+        console.log('Connected to database')
+        const db = client.db('fmsDb')
+        const collection = db.collection('fmsCollection') 
+
+        
+        // Fething data into from the  collection
+        const query = { fmsAccess : { $in: [req.body.fmsUser] } };
+        //const document = await collection.findOne(query);
+        const cursor = collection.find(query);
+        const documents = await cursor.toArray();
+
+        console.log(documents)
+        res.json({
+            "message" : documents,
             "status" : 200
         })
     })

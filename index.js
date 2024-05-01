@@ -1,5 +1,6 @@
 var express = require('express');
 const cors = require('cors');
+const axios = require('axios');
 var MongoClient = require('mongodb').MongoClient;
 require('dotenv').config();
 var app = express();
@@ -42,6 +43,61 @@ MongoClient.connect(process.env.MONGO_DB_STRING)
 console.error('Error Connecting to MongoDB' , error)
 })    
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+const getUserDetails = require('./routes/user/user'); 
+app.post('/tokenCheck', function (req, res) {
+  console.log(req.body.token)
+  axios.post(process.env.MAIN_BE_URL, {token : req.body.token})
+    .then(response => {
+      console.log('Data posted successfully:', response.data);
+      res.send(response.data); // Return the response data
+    })
+    .catch(error => {
+      console.error('Error posting data:', error);
+      res.send(error); // Rethrow the error to be handled by the caller
+    });
+}) 
+
+app.post('/submitFMSQuestionare', function (req, res) {
+  
+  MongoClient.connect(process.env.MONGO_DB_STRING)
+    .then(async client => {
+        console.log('Connected to database')
+        const db = client.db('surya')
+        const collection = db.collection('fmsMaster')
+        
+        // Find the last inserted document and get its incremental value
+        const lastDocument = await collection.find().sort({ _id: -1 }).limit(1).toArray();
+        let incrementalValue = 1;
+
+        if (lastDocument.length > 0) {
+            incrementalValue = lastDocument[0].incrementalValue + 1;
+        }
+
+        // Inserting data into the collection
+        const result = await collection.insertOne({
+            incrementalValue,
+            fmsName : req.body.fmsName,
+            fmsDescription : req.body.fmsDescription,
+            fmsProcess : req.body.fmsProcess
+        });
+
+        console.log(result)
+        res.json({
+            "message" : `${req.body.fmsName} Step 1 is Successfully Created`,
+            "status" : 200
+        })
+    })
+    .catch(error => {
+        console.error('Error Connecting to MongoDB' , error)
+        res.json({
+            "message" : `${req.body.fmsName} Step 1 is NOT Created`,
+            "status" : 500
+        })
+    })
+ 
+}) 
+
 
 
 

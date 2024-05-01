@@ -47,6 +47,18 @@ How will you do this step
 ngrok token  -2fHbiUaddJBLgvfxUdXfxCoVbXQ_4KJMC3ATzhSn5EwAq2Xt6
 
 
+from token get yser id and company
+for ansewr q - use same payload 
+after submitting calculate planned time and create that task
+get a few fms from ahana
+after form submission - calculate planned date and time and add task and send notification 
+api to get fms tasks
+in the tasks - send only overdue and todays tasks in the api
+add a status for every step
+create db and collection in mongodb once a company is registered
+
+
+
 
 
 

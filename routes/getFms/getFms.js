@@ -4,14 +4,32 @@ var MongoClient = require('mongodb').MongoClient;
 
 //find  Single FMS using FMS Name
 getFms.post('/findSingleFms' , (req, res) => {
-    //request the name of the FMS
-    let fmsName = req.body.fmsName;
+    
+    //based on the token get the username and company name
+    console.log(req.headers.token)
+    let userName = ""
+    let userID = ""
+    let companyUrl = ""
+    let userEmail = ""
+    axios.post(process.env.MAIN_BE_URL, {token : req.headers.token})
+    .then(response => {
+      console.log('Data posted successfully:', response.data);
+      userName = response.data.emp_name
+      userID = response.data.user_id
+      companyUrl = response.data.verify_company_url
+      userEmail = response.data.email_id
+      //res.send(response.data); // Return the response data
+    })
+    .catch(error => {
+      console.error('Error posting data:', error);
+      //res.send(error); // Rethrow the error to be handled by the caller
+    });
 
     MongoClient.connect(process.env.MONGO_DB_STRING)
     .then(async client => {
         console.log('Connected to database')
-        const db = client.db('fmsDb')
-        const collection = db.collection('fmsCollection') 
+        const db = client.db(companyUrl)
+            const collection = db.collection('fmsMaster') 
 
         // Fething data into from the  collection
         const query = { fmsName: req.body.fmsName };
@@ -35,14 +53,31 @@ getFms.post('/findSingleFms' , (req, res) => {
 
 //find ALL FMS 
 getFms.get('/findAllFms' , (req, res) => {
-    //request the name of the FMS
-    let fmsName = req.body.fmsName;
+   //based on the token get the username and company name
+   console.log(req.headers.token)
+   let userName = ""
+   let userID = ""
+   let companyUrl = ""
+   let userEmail = ""
+   axios.post(process.env.MAIN_BE_URL, {token : req.headers.token})
+   .then(response => {
+     console.log('Data posted successfully:', response.data);
+     userName = response.data.emp_name
+     userID = response.data.user_id
+     companyUrl = response.data.verify_company_url
+     userEmail = response.data.email_id
+     //res.send(response.data); // Return the response data
+   })
+   .catch(error => {
+     console.error('Error posting data:', error);
+     //res.send(error); // Rethrow the error to be handled by the caller
+   });
 
     MongoClient.connect(process.env.MONGO_DB_STRING)
     .then(async client => {
         console.log('Connected to database')
-        const db = client.db('fmsDb')
-        const collection = db.collection('fmsCollection') 
+        const db = client.db(companyUrl)
+        const collection = db.collection('fmsMaster')  
 
         const cursor = collection.find();
         const documents = await cursor.toArray();
@@ -68,11 +103,31 @@ getFms.post('/findFmsQuestionaresForUser' , (req, res) => {
     //request the name of the FMS
     //let fmsName = req.body.fmsName;
 
+    //based on the token get the username and company name
+   console.log(req.headers.token)
+   let userName = ""
+   let userID = ""
+   let companyUrl = ""
+   let userEmail = ""
+   axios.post(process.env.MAIN_BE_URL, {token : req.headers.token})
+   .then(response => {
+     console.log('Data posted successfully:', response.data);
+     userName = response.data.emp_name
+     userID = response.data.user_id
+     companyUrl = response.data.verify_company_url
+     userEmail = response.data.email_id
+     //res.send(response.data); // Return the response data
+   })
+   .catch(error => {
+     console.error('Error posting data:', error);
+     //res.send(error); // Rethrow the error to be handled by the caller
+   });
+
     MongoClient.connect(process.env.MONGO_DB_STRING)
     .then(async client => {
         console.log('Connected to database')
-        const db = client.db('fmsDb')
-        const collection = db.collection('fmsCollection') 
+        const db = client.db(companyUrl)
+        const collection = db.collection('fmsMaster') 
 
         
         // Fething data into from the  collection

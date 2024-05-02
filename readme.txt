@@ -57,6 +57,10 @@ in the tasks - send only overdue and todays tasks in the api
 add a status for every step
 create db and collection in mongodb once a company is registered
 
+--all fms
+--all request formats
+--submit qa
+
 
 
 

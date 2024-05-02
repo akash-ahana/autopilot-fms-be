@@ -2,37 +2,49 @@ const express = require("express");
 const initialiseFms = express.Router();
 var MongoClient = require('mongodb').MongoClient;
 const axios = require('axios');
+const auth = require('../../middleware/tokenVerify')
 
-initialiseFms.post('/fmsStep1' , (req, res) => {
-    console.log("inside fms step1")
-    console.log(req.body.fmsName)
+initialiseFms.post('/fmsStep1', async (req, res) => {
+    console.log("Fms Step 1 API hit");
+    console.log(req.body.fmsName);
 
-    //based on the token get the username and company name
-    console.log(req.headers.token)
-    let userName = ""
-    let userID = ""
-    let companyUrl = ""
-    let userEmail = ""
-    axios.post(process.env.MAIN_BE_URL, {token : req.headers.token})
-    .then(response => {
-      console.log('Data posted successfully:', response.data);
-      userName = response.data.emp_name
-      userID = response.data.user_id
-      companyUrl = response.data.verify_company_url
-      userEmail = response.data.email_id
-      //res.send(response.data); // Return the response data
-    })
-    .catch(error => {
-      console.error('Error posting data:', error);
-      //res.send(error); // Rethrow the error to be handled by the caller
-    });
+    // Initialize variables to hold user details
+    let userName = "";
+    let userID = "";
+    let companyUrl = "";
+    let userEmail = "";
 
-    MongoClient.connect(process.env.MONGO_DB_STRING)
-    .then(async client => {
-        console.log('Connected to database')
-        const db = client.db(companyUrl)
-        const collection = db.collection('fmsMaster')
-        
+    console.log(req.headers.authorization)
+      const authHeader = req.headers.authorization;
+      if (!authHeader || !authHeader.startsWith("Bearer")) {
+        console.log("error: Authorization header missing or malformed");
+        return res.status(401).json({ error: 'Unauthorized' });
+      }
+      const token = authHeader.split(" ")[1];
+
+      console.log('token fetched is ' , token)
+
+    try {
+        // Fetch user details and company details based on the token
+        const response = await axios.post(process.env.MAIN_BE_URL, { token: token });
+        console.log('Fetched User Details and Company Details', response.data);
+        userName = response.data.emp_name;
+        userID = response.data.user_id;
+        companyUrl = response.data.verify_company_url;
+        userEmail = response.data.email_id;
+    } catch (error) {
+        console.error('Error posting data:', error);
+        res.status(500).send({ message: 'Error fetching user details', status: 500 });
+        return;
+    }
+
+    try {
+        // Connect to MongoDB and perform operations
+        const client = await MongoClient.connect(process.env.MONGO_DB_STRING);
+        console.log('Connected to database');
+        const db = client.db(companyUrl);
+        const collection = db.collection('fmsMaster');
+
         // Find the last inserted document and get its incremental value
         const lastDocument = await collection.find().sort({ _id: -1 }).limit(1).toArray();
         let fmsMasterId = 1;
@@ -44,115 +56,144 @@ initialiseFms.post('/fmsStep1' , (req, res) => {
         // Inserting data into the collection
         const result = await collection.insertOne({
             fmsMasterId,
-            fmsCreatedBy : {userID : userID , userEmail: userEmail , userName : userName},
-            fmsName : req.body.fmsName,
-            fmsDescription : req.body.fmsDescription,
-            fmsProcess : req.body.fmsProcess
+            fmsCreatedBy: { userID: userID, userEmail: userEmail, userName: userName },
+            fmsName: req.body.fmsName,
+            fmsDescription: req.body.fmsDescription,
+            fmsProcess: req.body.fmsProcess
         });
 
-        console.log(result)
+        console.log(result);
         res.json({
-            "message" : `${req.body.fmsName} Step 1 is Successfully Created`,
-            "status" : 200
-        })
-    })
-    .catch(error => {
-        console.error('Error Connecting to MongoDB' , error)
-        res.json({
-            "message" : `${req.body.fmsName} Step 1 is NOT Created`,
-            "status" : 500
-        })
-    })
-})
+            "message": `${req.body.fmsName} Step 1 is Successfully Created`,
+            "status": 200
+        });
+
+        // Close the MongoDB connection
+        await client.close();
+        console.log('MongoDB connection closed');
+    } catch (error) {
+        console.error('Error Connecting to MongoDB', error);
+        res.status(500).send({ message: `${req.body.fmsName} Step 1 is NOT Created`, status: 500 });
+    }
+});
+
+
+
 
 //Edit FMS -- ADD FMS Access, No Edit Access For Now
-initialiseFms.post('/addFmsUserAccess' , (req, res) => {
+initialiseFms.post('/addFmsUserAccess' , async (req, res) => {
 
-    //based on the token get the username and company name
-    console.log(req.headers.token)
-    let userName = ""
-    let userID = ""
-    let companyUrl = ""
-    let userEmail = ""
-    axios.post(process.env.MAIN_BE_URL, {token : req.headers.token})
-    .then(response => {
-      console.log('Data posted successfully:', response.data);
-      userName = response.data.emp_name
-      userID = response.data.user_id
-      companyUrl = response.data.verify_company_url
-      userEmail = response.data.email_id
-      //res.send(response.data); // Return the response data
-    })
-    .catch(error => {
-      console.error('Error posting data:', error);
-      //res.send(error); // Rethrow the error to be handled by the caller
-    });
+    // Initialize variables to hold user details
+    let userName = "";
+    let userID = "";
+    let companyUrl = "";
+    let userEmail = "";
 
-        MongoClient.connect(process.env.MONGO_DB_STRING)
-        .then(async client => {
-            
-            const db = client.db(companyUrl)
-            const collection = db.collection('fmsMaster') 
-    
-            const filter = { fmsName : req.body.fmsName };
-            const update = { $set: { fmsAccess : req.body.fmsUsers } };
-            const options = { upsert: true };
-            
-            const result = await collection.updateOne(filter, update, options);
-            
-            if (result.upsertedCount === 1) {
-              console.log('Document inserted');
-            } else if (result.modifiedCount === 1) {
-              console.log('Document updated');
-            } else {
-              console.log('No changes made to the document');
+    console.log(req.headers.authorization)
+      const authHeader = req.headers.authorization;
+      if (!authHeader || !authHeader.startsWith("Bearer")) {
+        console.log("error: Authorization header missing or malformed");
+        return res.status(401).json({ error: 'Unauthorized' });
+      }
+      const token = authHeader.split(" ")[1];
+
+      console.log('token fetched is ' , token)
+
+    try {
+        // Fetch user details and company details based on the token
+        const response = await axios.post(process.env.MAIN_BE_URL, { token: token });
+        console.log('Fetched User Details and Company Details', response.data);
+        userName = response.data.emp_name;
+        userID = response.data.user_id;
+        companyUrl = response.data.verify_company_url;
+        userEmail = response.data.email_id;
+    } catch (error) {
+        console.error('Error posting data:', error);
+        res.status(500).send({ message: 'Error fetching user details', status: 500 });
+        return;
+    }
+
+            try {
+                // Connect to MongoDB and perform operations
+                const client = await MongoClient.connect(process.env.MONGO_DB_STRING);
+                console.log('Connected to database');
+                const db = client.db(companyUrl);
+                const collection = db.collection('fmsMaster');
+
+                const filter = { fmsName : req.body.fmsName };
+                const update = { $set: { fmsAccess : req.body.fmsUsers } };
+                const options = { upsert: true };
+                
+                const result = await collection.updateOne(filter, update, options);
+                
+                if (result.upsertedCount === 1) {
+                console.log('Document inserted');
+                } else if (result.modifiedCount === 1) {
+                console.log('Document updated');
+                } else {
+                console.log('No changes made to the document');
+                }
+        
+                console.log(result)
+                res.json({
+                    "message" : `${req.body.fmsName} FMS Users is Successfully Added`,
+                    "status" : 200
+                })
+                 // Close the MongoDB connection
+                    await client.close();
+                    console.log('MongoDB connection closed');
+            } 
+            catch (error) {
+                console.error('Error Connecting to MongoDB', error);
+                res.status(500).send({ message: `${req.body.fmsName} Step 1 is NOT Added`, status: 500 });
             }
-    
-            console.log(result)
-            res.json({
-                "message" : `${req.body.fmsName} FMS Users is Successfully Added`,
-                "status" : 200
-            })
-        })
-        .catch(error => {
-            console.error('Error Connecting to MongoDB' , error)
-            res.json({
-                "message" : `${req.body.fmsName} FMS Users is Successfully Added`,
-                "status" : 500
-            })
-        })
+
+        
     })
 
 ////////////// ---------------------- Create Questionare ----------------------////////////////////
 
 //file upload, text(string) , dropdown(array of strings) , checkboxes(array of strings) , date (single date)
 
-initialiseFms.post('/createFmsQuestionare' , (req, res) => {
-    //based on the token get the username and company name
-    console.log(req.headers.token)
-    let userName = ""
-    let userID = ""
-    let companyUrl = ""
-    let userEmail = ""
-    axios.post(process.env.MAIN_BE_URL, {token : req.headers.token})
-    .then(response => {
-      console.log('Data posted successfully:', response.data);
-      userName = response.data.emp_name
-      userID = response.data.user_id
-      companyUrl = response.data.verify_company_url
-      userEmail = response.data.email_id
-      //res.send(response.data); // Return the response data
-    })
-    .catch(error => {
-      console.error('Error posting data:', error);
-      //res.send(error); // Rethrow the error to be handled by the caller
-    });
+initialiseFms.post('/createFmsQuestionare' , async (req, res) => {
+    
+    // Initialize variables to hold user details
+    let userName = "";
+    let userID = "";
+    let companyUrl = "";
+    let userEmail = "";
 
-    MongoClient.connect(process.env.MONGO_DB_STRING)
-    .then(async client => {
-        
-        const db = client.db(companyUrl)
-        const collection = db.collection('fmsMaster') 
+    console.log(req.headers.authorization)
+      const authHeader = req.headers.authorization;
+      if (!authHeader || !authHeader.startsWith("Bearer")) {
+        console.log("error: Authorization header missing or malformed");
+        return res.status(401).json({ error: 'Unauthorized' });
+      }
+      const token = authHeader.split(" ")[1];
+
+      console.log('token fetched is ' , token)
+
+    try {
+        // Fetch user details and company details based on the token
+        const response = await axios.post(process.env.MAIN_BE_URL, { token: token });
+        console.log('Fetched User Details and Company Details', response.data);
+        userName = response.data.emp_name;
+        userID = response.data.user_id;
+        companyUrl = response.data.verify_company_url;
+        userEmail = response.data.email_id;
+    } catch (error) {
+        console.error('Error posting data:', error);
+        res.status(500).send({ message: 'Error fetching user details', status: 500 });
+        return;
+    }
+    
+    try {
+
+        // Connect to MongoDB and perform operations
+        const client = await MongoClient.connect(process.env.MONGO_DB_STRING);
+        console.log('Connected to database');
+        const db = client.db(companyUrl);
+        const collection = db.collection('fmsMaster');
 
         const filter = { fmsName : req.body.fmsName };
         const update = { $set: { fmsQuestionare : req.body.fmsQuestionare } };
@@ -173,44 +214,58 @@ initialiseFms.post('/createFmsQuestionare' , (req, res) => {
         "message" : `${req.body.fmsName} FMS Questionare is Successfully Added`,
         "status" : 200
     })
-})
-    .catch(error => {
-        console.error('Error Connecting to MongoDB' , error)
-        res.json({
-            "message" : `${req.body.fmsName} FMS Questionare is Not Added`,
-            "status" : 500
-        })
-    })
+
+        // Close the MongoDB connection
+        await client.close();
+        console.log('MongoDB connection closed');
+
+    }
+    catch (error) {
+        console.error('Error Connecting to MongoDB', error);
+        res.status(500).send({ message: `${req.body.fmsName} FMS Questionare is Not Added`, status: 500 });
+    }
 })
 
 //CREATE FMS Steps
-initialiseFms.post('/createFmsSteps' , (req, res) => {
+initialiseFms.post('/createFmsSteps' , async (req, res) => {
 
-    //based on the token get the username and company name
-    console.log(req.headers.token)
-    let userName = ""
-    let userID = ""
-    let companyUrl = ""
-    let userEmail = ""
-    axios.post(process.env.MAIN_BE_URL, {token : req.headers.token})
-    .then(response => {
-      console.log('Data posted successfully:', response.data);
-      userName = response.data.emp_name
-      userID = response.data.user_id
-      companyUrl = response.data.verify_company_url
-      userEmail = response.data.email_id
-      //res.send(response.data); // Return the response data
-    })
-    .catch(error => {
-      console.error('Error posting data:', error);
-      //res.send(error); // Rethrow the error to be handled by the caller
-    });
-    
-    MongoClient.connect(process.env.MONGO_DB_STRING)
-    .then(async client => {
-        
-        const db = client.db(companyUrl)
-        const collection = db.collection('fmsMaster') 
+    // Initialize variables to hold user details
+    let userName = "";
+    let userID = "";
+    let companyUrl = "";
+    let userEmail = "";
+
+    console.log(req.headers.authorization)
+      const authHeader = req.headers.authorization;
+      if (!authHeader || !authHeader.startsWith("Bearer")) {
+        console.log("error: Authorization header missing or malformed");
+        return res.status(401).json({ error: 'Unauthorized' });
+      }
+      const token = authHeader.split(" ")[1];
+
+      console.log('token fetched is ' , token)
+
+    try {
+        // Fetch user details and company details based on the token
+        const response = await axios.post(process.env.MAIN_BE_URL, { token: token });
+        console.log('Fetched User Details and Company Details', response.data);
+        userName = response.data.emp_name;
+        userID = response.data.user_id;
+        companyUrl = response.data.verify_company_url;
+        userEmail = response.data.email_id;
+    } catch (error) {
+        console.error('Error posting data:', error);
+        res.status(500).send({ message: 'Error fetching user details', status: 500 });
+        return;
+    }
+
+    try {
+
+        // Connect to MongoDB and perform operations
+        const client = await MongoClient.connect(process.env.MONGO_DB_STRING);
+        console.log('Connected to database');
+        const db = client.db(companyUrl);
+        const collection = db.collection('fmsMaster');
 
         const filter = { fmsName : req.body.fmsName };
     const update = { $set: { fmsSteps : req.body.fmsSteps } };
@@ -231,44 +286,61 @@ initialiseFms.post('/createFmsSteps' , (req, res) => {
         "message" : `${req.body.fmsName} FMS Steps is Successfully Added`,
         "status" : 200
     })
-})
-    .catch(error => {
-        console.error('Error Connecting to MongoDB' , error)
-        res.json({
-            "message" : `${req.body.fmsName} FMS Steps is Not  Added`,
-            "status" : 500
-        })
-    })
-})
 
-//edit FMS option
-initialiseFms.post('/editFmsLive' , (req, res) => {
+    // Close the MongoDB connection
+    await client.close();
+    console.log('MongoDB connection closed');
 
-    //based on the token get the username and company name
-    console.log(req.headers.token)
-    let userName = ""
-    let userID = ""
-    let companyUrl = ""
-    let userEmail = ""
-    axios.post(process.env.MAIN_BE_URL, {token : req.headers.token})
-    .then(response => {
-      console.log('Data posted successfully:', response.data);
-      userName = response.data.emp_name
-      userID = response.data.user_id
-      companyUrl = response.data.verify_company_url
-      userEmail = response.data.email_id
-      //res.send(response.data); // Return the response data
-    })
-    .catch(error => {
-      console.error('Error posting data:', error);
-      //res.send(error); // Rethrow the error to be handled by the caller
-    });
+    }
+    catch (error) {
+        console.error('Error Connecting to MongoDB', error);
+        res.status(500).send({ message: `${req.body.fmsName} FMS Steps is NOT  Added`, status: 500 });
+    }
+
     
-    MongoClient.connect(process.env.MONGO_DB_STRING)
-    .then(async client => {
-        
-        const db = client.db(companyUrl)
-        const collection = db.collection('fmsMaster') 
+})
+
+
+//CREATE FMS Steps
+initialiseFms.post('/makeFmsLive' , async (req, res) => {
+
+    // Initialize variables to hold user details
+    let userName = "";
+    let userID = "";
+    let companyUrl = "";
+    let userEmail = "";
+
+    console.log(req.headers.authorization)
+      const authHeader = req.headers.authorization;
+      if (!authHeader || !authHeader.startsWith("Bearer")) {
+        console.log("error: Authorization header missing or malformed");
+        return res.status(401).json({ error: 'Unauthorized' });
+      }
+      const token = authHeader.split(" ")[1];
+
+      console.log('token fetched is ' , token)
+
+    try {
+        // Fetch user details and company details based on the token
+        const response = await axios.post(process.env.MAIN_BE_URL, { token: token });
+        console.log('Fetched User Details and Company Details', response.data);
+        userName = response.data.emp_name;
+        userID = response.data.user_id;
+        companyUrl = response.data.verify_company_url;
+        userEmail = response.data.email_id;
+    } catch (error) {
+        console.error('Error posting data:', error);
+        res.status(500).send({ message: 'Error fetching user details', status: 500 });
+        return;
+    }
+
+    try {
+
+        // Connect to MongoDB and perform operations
+        const client = await MongoClient.connect(process.env.MONGO_DB_STRING);
+        console.log('Connected to database');
+        const db = client.db(companyUrl);
+        const collection = db.collection('fmsMaster');
 
         const filter = { fmsName : req.body.fmsName };
     const update = { $set: { fmsLive : req.body.fmsLive } };
@@ -286,18 +358,23 @@ initialiseFms.post('/editFmsLive' , (req, res) => {
 
     console.log(result)
     res.json({
-        "message" : `${req.body.fmsName} Fms is made ${req.body.fmsLive} successfully `,
+        "message" : `${req.body.fmsName} FMS Steps is Successfully Added`,
         "status" : 200
     })
+
+    // Close the MongoDB connection
+    await client.close();
+    console.log('MongoDB connection closed');
+
+    }
+    catch (error) {
+        console.error('Error Connecting to MongoDB', error);
+        res.status(500).send({ message: `${req.body.fmsName} FMS Steps is NOT  Added`, status: 500 });
+    }
+
+    
 })
-    .catch(error => {
-        console.error('Error Connecting to MongoDB' , error)
-        res.json({
-            "message" : `${req.body.fmsName} Fms is NOT made ${req.body.fmsLive} successfully`,
-            "status" : 500
-        })
-    })
-})
+
 
 
 

@@ -1,35 +1,48 @@
 const express = require("express");
 const getFms = express.Router();
 var MongoClient = require('mongodb').MongoClient;
+const axios = require('axios');
 
 //find  Single FMS using FMS Name
-getFms.post('/findSingleFms' , (req, res) => {
+getFms.post('/findSingleFms' , async (req, res) => {
     
-    //based on the token get the username and company name
-    console.log(req.headers.token)
-    let userName = ""
-    let userID = ""
-    let companyUrl = ""
-    let userEmail = ""
-    axios.post(process.env.MAIN_BE_URL, {token : req.headers.token})
-    .then(response => {
-      console.log('Data posted successfully:', response.data);
-      userName = response.data.emp_name
-      userID = response.data.user_id
-      companyUrl = response.data.verify_company_url
-      userEmail = response.data.email_id
-      //res.send(response.data); // Return the response data
-    })
-    .catch(error => {
-      console.error('Error posting data:', error);
-      //res.send(error); // Rethrow the error to be handled by the caller
-    });
+    // Initialize variables to hold user details
+    let userName = "";
+    let userID = "";
+    let companyUrl = "";
+    let userEmail = "";
 
-    MongoClient.connect(process.env.MONGO_DB_STRING)
-    .then(async client => {
-        console.log('Connected to database')
-        const db = client.db(companyUrl)
-            const collection = db.collection('fmsMaster') 
+    console.log(req.headers.authorization)
+      const authHeader = req.headers.authorization;
+      if (!authHeader || !authHeader.startsWith("Bearer")) {
+        console.log("error: Authorization header missing or malformed");
+        return res.status(401).json({ error: 'Unauthorized' });
+      }
+      const token = authHeader.split(" ")[1];
+
+      console.log('token fetched is ' , token)
+
+      try {
+        // Fetch user details and company details based on the token
+        const response = await axios.post(process.env.MAIN_BE_URL, { token: token });
+        console.log('Fetched User Details and Company Details', response.data);
+        userName = response.data.emp_name;
+        userID = response.data.user_id;
+        companyUrl = response.data.verify_company_url;
+        userEmail = response.data.email_id;
+    } catch (error) {
+        console.error('Error posting data:', error);
+        res.status(500).send({ message: 'Error fetching user details', status: 500 });
+        return;
+    }
+
+    try {
+
+        // Connect to MongoDB and perform operations
+        const client = await MongoClient.connect(process.env.MONGO_DB_STRING);
+        console.log('Connected to database');
+        const db = client.db(companyUrl);
+        const collection = db.collection('fmsMaster');
 
         // Fething data into from the  collection
         const query = { fmsName: req.body.fmsName };
@@ -40,44 +53,52 @@ getFms.post('/findSingleFms' , (req, res) => {
             "message" : document,
             "status" : 200
         })
-    })
-    .catch(error => {
-        console.error('Error Connecting to MongoDB' , error)
-        res.json({
-            "message" : `${req.body.fmsName} Could Not Find FMS`,
-            "status" : 500
-        })
-    })
 
+    } catch (error) {
+        console.error('Error Connecting to MongoDB', error);
+        res.status(500).send({ message: `${req.body.fmsName}  NOT found`, status: 500 });
+    }
 })
 
 //find ALL FMS 
-getFms.get('/findAllFms' , (req, res) => {
-   //based on the token get the username and company name
-   console.log(req.headers.token)
-   let userName = ""
-   let userID = ""
-   let companyUrl = ""
-   let userEmail = ""
-   axios.post(process.env.MAIN_BE_URL, {token : req.headers.token})
-   .then(response => {
-     console.log('Data posted successfully:', response.data);
-     userName = response.data.emp_name
-     userID = response.data.user_id
-     companyUrl = response.data.verify_company_url
-     userEmail = response.data.email_id
-     //res.send(response.data); // Return the response data
-   })
-   .catch(error => {
-     console.error('Error posting data:', error);
-     //res.send(error); // Rethrow the error to be handled by the caller
-   });
+getFms.get('/findAllFms' , async (req, res) => {
+   
+    // Initialize variables to hold user details
+    let userName = "";
+    let userID = "";
+    let companyUrl = "";
+    let userEmail = "";
 
-    MongoClient.connect(process.env.MONGO_DB_STRING)
-    .then(async client => {
-        console.log('Connected to database')
-        const db = client.db(companyUrl)
-        const collection = db.collection('fmsMaster')  
+    console.log(req.headers.authorization)
+      const authHeader = req.headers.authorization;
+      if (!authHeader || !authHeader.startsWith("Bearer")) {
+        console.log("error: Authorization header missing or malformed");
+        return res.status(401).json({ error: 'Unauthorized' });
+      }
+      const token = authHeader.split(" ")[1];
+
+      console.log('token fetched is ' , token)
+
+      try {
+        // Fetch user details and company details based on the token
+        const response = await axios.post(process.env.MAIN_BE_URL, { token: token });
+        console.log('Fetched User Details and Company Details', response.data);
+        userName = response.data.emp_name;
+        userID = response.data.user_id;
+        companyUrl = response.data.verify_company_url;
+        userEmail = response.data.email_id;
+    } catch (error) {
+        console.error('Error posting data:', error);
+        res.status(500).send({ message: 'Error fetching user details', status: 500 });
+        return;
+    }
+
+    try {
+        // Connect to MongoDB and perform operations
+        const client = await MongoClient.connect(process.env.MONGO_DB_STRING);
+        console.log('Connected to database');
+        const db = client.db(companyUrl);
+        const collection = db.collection('fmsMaster');
 
         const cursor = collection.find();
         const documents = await cursor.toArray();
@@ -87,51 +108,67 @@ getFms.get('/findAllFms' , (req, res) => {
             "message" : [documents],
             "status" : 200
         })
-    })
-    .catch(error => {
-        console.error('Error Connecting to MongoDB' , error)
-        res.json({
-            "message" : `${req.body.fmsName} Could Not Find FMS`,
-            "status" : 500
-        })
-    })
 
+        // Close the MongoDB connection
+        await client.close();
+        console.log('MongoDB connection closed');
+    } 
+    catch (error) {
+        console.error('Error Connecting to MongoDB', error);
+        res.status(500).send({ message: `${req.body.fmsName}  NOT found`, status: 500 });
+    }
 })
 
 //find all fms and their forms the user has access to 
-getFms.post('/findFmsQuestionaresForUser' , (req, res) => {
-    //request the name of the FMS
-    //let fmsName = req.body.fmsName;
+getFms.get('/findFmsQuestionaresForUser' , async (req, res) => {
+    // Initialize variables to hold user details
+    let userName = "";
+    let userID = "";
+    let companyUrl = "";
+    let userEmail = "";
 
-    //based on the token get the username and company name
-   console.log(req.headers.token)
-   let userName = ""
-   let userID = ""
-   let companyUrl = ""
-   let userEmail = ""
-   axios.post(process.env.MAIN_BE_URL, {token : req.headers.token})
-   .then(response => {
-     console.log('Data posted successfully:', response.data);
-     userName = response.data.emp_name
-     userID = response.data.user_id
-     companyUrl = response.data.verify_company_url
-     userEmail = response.data.email_id
-     //res.send(response.data); // Return the response data
-   })
-   .catch(error => {
-     console.error('Error posting data:', error);
-     //res.send(error); // Rethrow the error to be handled by the caller
-   });
+    console.log(req.headers.authorization)
+      const authHeader = req.headers.authorization;
+      if (!authHeader || !authHeader.startsWith("Bearer")) {
+        console.log("error: Authorization header missing or malformed");
+        return res.status(401).json({ error: 'Unauthorized' });
+      }
+      const token = authHeader.split(" ")[1];
 
-    MongoClient.connect(process.env.MONGO_DB_STRING)
-    .then(async client => {
-        console.log('Connected to database')
-        const db = client.db(companyUrl)
-        const collection = db.collection('fmsMaster') 
+      console.log('token fetched is ' , token)
 
-        
+      try {
+        // Fetch user details and company details based on the token
+        const response = await axios.post(process.env.MAIN_BE_URL, { token: token });
+        console.log('Fetched User Details and Company Details', response.data);
+        userName = response.data.emp_name;
+        userID = response.data.user_id;
+        companyUrl = response.data.verify_company_url;
+        userEmail = response.data.email_id;
+    } catch (error) {
+        console.error('Error posting data:', error);
+        res.status(500).send({ message: 'Error fetching user details', status: 500 });
+        return;
+    }
+
+    try {
+
+        // Connect to MongoDB and perform operations
+        const client = await MongoClient.connect(process.env.MONGO_DB_STRING);
+        console.log('Connected to database');
+        const db = client.db(companyUrl);
+        const collection = db.collection('fmsMaster');
+
         // Fething data into from the  collection
-        const query = { fmsAccess : { $in: [req.body.fmsUser] } };
+        //const namesArray = userNameArray.map(obj => obj.name);
+        //const query = { fmsAccess : { $in: [userName] } };
+        const query = {
+            fmsAccess: {
+              $elemMatch: {
+                name: userName
+              }
+            }
+          };
         //const document = await collection.findOne(query);
         const cursor = collection.find(query);
         const documents = await cursor.toArray();
@@ -141,14 +178,19 @@ getFms.post('/findFmsQuestionaresForUser' , (req, res) => {
             "message" : documents,
             "status" : 200
         })
-    })
-    .catch(error => {
-        console.error('Error Connecting to MongoDB' , error)
-        res.json({
-            "message" : `${req.body.fmsName} Coul Not Find FMS`,
-            "status" : 500
-        })
-    })
+
+        // Close the MongoDB connection
+        await client.close();
+        console.log('MongoDB connection closed');
+
+
+
+    } catch (error) {
+        console.error('Error Connecting to MongoDB', error);
+        res.status(500).send({ message: `${req.body.fmsName}  NOT found`, status: 500 });
+    }
+
+    
 
 })
 

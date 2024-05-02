@@ -115,6 +115,8 @@ app.use("/fmsInitilisation", fmsInitilisation);
 const aws = require("./routes/s3Functions/awsS3functions");
 app.use("/awsS3", aws);
 //--------------------------------------------------------------------//
+const submitQA = require("./routes/submitFmsQuestionare");
+app.use("/submitQA", submitQA);
 
 
 var server = app.listen(process.env.PORT, function () {

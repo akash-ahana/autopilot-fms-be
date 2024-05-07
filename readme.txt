@@ -61,6 +61,9 @@ create db and collection in mongodb once a company is registered
 --all request formats
 --submit qa
 
+create task for a user
+fmsMasterId, fmsQAID, taskID , userID(who ??), processid, status(delayed, on time), createdtime(formSubmissionTime), plannedEndTime(time in hrs, time in days), 
+
 
 
 

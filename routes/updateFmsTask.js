@@ -3,6 +3,10 @@ const updateFmsTask = express.Router();
 var MongoClient = require('mongodb').MongoClient;
 const axios = require('axios');
 
+//update fms tasks 
+//first it updates the task that is send 
+//fetch the next task , 
+//create a task for that user
 updateFmsTask.post('/updateFmsTask' , async (req, res) => {
     console.log("inside fms fmsUserQA")
     console.log(req.body.fmsName)
@@ -39,8 +43,9 @@ updateFmsTask.post('/updateFmsTask' , async (req, res) => {
         return;
     }
 
-    try {
 
+    //try block to update the task
+    try {
         // Connect to MongoDB and perform operations
         const client = await MongoClient.connect(process.env.MONGO_DB_STRING);
         console.log('Connected to database');
@@ -65,10 +70,10 @@ updateFmsTask.post('/updateFmsTask' , async (req, res) => {
         const result = await collection.updateOne(filter, update);
 
         console.log(result);
-        res.json({
-            "message": `Task is successfully updated`,
-            "status": 200
-        });
+        // res.json({
+        //     "message": `Task is successfully updated`,
+        //     "status": 200
+        // });
 
         // Close the MongoDB connection
         await client.close();
@@ -80,6 +85,7 @@ updateFmsTask.post('/updateFmsTask' , async (req, res) => {
         return;
     }
 
+    res.send("DONE")
 })
 
 module.exports = updateFmsTask;

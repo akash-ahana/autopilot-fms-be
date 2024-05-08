@@ -65,6 +65,9 @@ create task for a user
 fmsMasterId, fmsQAID, taskID , userID(who ??), processid, status(delayed, on time), createdtime(formSubmissionTime), plannedEndTime(time in hrs, time in days), 
 
 
+-remove duplicates when initializing fms - basically remove the upsert and test it out
+
+
 
 
 

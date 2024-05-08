@@ -6,7 +6,7 @@ const auth = require('../../middleware/tokenVerify')
 
 initialiseFms.post('/fmsStep1', async (req, res) => {
     console.log("Fms Step 1 API hit");
-    console.log(req.body.fmsName);
+    console.log(req.body);
 
     // Initialize variables to hold user details
     let userName = "";
@@ -62,11 +62,22 @@ initialiseFms.post('/fmsStep1', async (req, res) => {
             fmsProcess: req.body.fmsProcess
         });
 
-        console.log(result);
+        // Retrieve the inserted document using its _id
+        const insertedDocument = await collection.findOne({ _id: result.insertedId });
+
+        console.log(insertedDocument);
+
         res.json({
             "message": `${req.body.fmsName} Step 1 is Successfully Created`,
-            "status": 200
+            "status": 200,
+            "data": insertedDocument // Include the inserted document in the response
         });
+
+        console.log(result);
+        // res.json({
+        //     "message": `${req.body.fmsName} Step 1 is Successfully Created`,
+        //     "status": 200
+        // });
 
         // Close the MongoDB connection
         await client.close();

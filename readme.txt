@@ -69,6 +69,31 @@ fmsMasterId, fmsQAID, taskID , userID(who ??), processid, status(delayed, on tim
 
 
 
+/////////////////////////////////////
+-change mongo GMT time to IST in create task api ( update task api , submitfmsQA)
+-CHECK ALL TASKS( THAT ARE PENDING) , FETCH THE PLANNED START TIME , PLANNED COMPLETION TIME , CHANGE STATUS TO oVERDUE  -- THIS IS IN CRON
+-list of tasks for a user is failing
+-in fms master - step id there which is being generated from front end , while updating the steps , this mighrt change , so update that as well
+-ADD HOURS LOGIC AS WELL IN BOTH THE TASK TRIGGERING FOR STEP 1 AND TASK UPDATIO
+-add an api to fetch dueToday tasks and all overdue tasks for that employee get request
+-once the fmsQA is submitted in the fms Master add one more firld called live fms's and increment that valur - later once all steps for that qa is completed decrement this value 
+-for manage fms - admin and pc 
+-for a pc which all fms they are port of and all the overdue tasks for all these fms 
+-all over overdue tasks irrespective of process or fms
+-just all the fms overdue tasks and then fms that a user_id who is the PC is associated with 
+-in update fms task api while submitting , when fetching the next taask , if there is no next task mark that fmsqaId AS COMPLETED(add the fmsqa key there)
+-make an api where if I pass you fmsmasterid & stepid, can you give me list of previous stepids and what has to be done in an array
+-if stepType is "QUALITY" then in update task api, am also sending
+    qualityStatus - Yes or No
+    qualityScore - number
+    if qualityStatus is No then , also passing
+    3.1. qualityRedoSteps - array of stepId (stepId which is the lowest needs to be retriggered)
+    3.2. scrapStatus - true or false (if true, then that fmsQAId needs to stop right there in that step, should not trigger any new task from any other steps)
+
+
+
+
+
 
 
 

@@ -3,6 +3,7 @@ const initialiseFms = express.Router();
 var MongoClient = require('mongodb').MongoClient;
 const axios = require('axios');
 const auth = require('../../middleware/tokenVerify')
+const moment = require('moment-timezone');
 
 initialiseFms.post('/fmsStep1', async (req, res) => {
     console.log("Fms Step 1 API hit");
@@ -53,14 +54,30 @@ initialiseFms.post('/fmsStep1', async (req, res) => {
             fmsMasterId = lastDocument[0].fmsMasterId + 1;
         }
 
+        console.log("token",token);
+        ////Fetch process details
+        const processDetailsResponse = await axios.post(process.env.MAIN_BE_PROCESS_URL, {
+          p_id: req.body.fmsProcess,
+          verify_company_url: companyUrl
+      });
+
+   //console.log( processDetailsResponse.data.result);
+
+   const currentDate = moment().tz('Asia/Kolkata').format();
+
         // Inserting data into the collection
         const result = await collection.insertOne({
             fmsMasterId,
             fmsCreatedBy: { userID: userID, userEmail: userEmail, userName: userName },
             fmsName: req.body.fmsName,
             fmsDescription: req.body.fmsDescription,
-            fmsProcess: req.body.fmsProcess
+            //fmsProcess: req.body.fmsProcess
+            fmsProcess: processDetailsResponse.data.result[0],
+            noOfLive : 0,
+            creationDate: currentDate
         });
+
+        //added return 
 
         // Retrieve the inserted document using its _id
         const insertedDocument = await collection.findOne({ _id: result.insertedId });
@@ -87,6 +104,7 @@ initialiseFms.post('/fmsStep1', async (req, res) => {
         res.status(500).send({ message: `${req.body.fmsName} Step 1 is NOT Created`, status: 500 });
     }
 });
+
 
 
 

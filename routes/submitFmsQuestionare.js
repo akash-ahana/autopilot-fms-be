@@ -2,6 +2,7 @@ const express = require("express");
 const submitFmsQuestionare = express.Router();
 var MongoClient = require('mongodb').MongoClient;
 const axios = require('axios');
+const moment = require('moment-timezone');
 
 
 
@@ -74,12 +75,9 @@ submitFmsQuestionare.post('/submitFmsUserQAcreateTaskStep1' , async (req, res) =
             
         });
 
-        console.log(result);
+        
         console.log('Submitted the QA');
-        // res.json({
-        //     "message": `${req.body.fmsName} Step 1 is Successfully Created`,
-        //     "status": 200
-        // });
+        
 
         // Close the MongoDB connection
         await client.close();
@@ -90,6 +88,37 @@ submitFmsQuestionare.post('/submitFmsUserQAcreateTaskStep1' , async (req, res) =
         res.status(500).send({ message: 'Error Submitting QA', status: 500 });
         return;
     }
+
+    //try catch block to increment the live fms no
+    try {
+
+        // Connect to MongoDB and perform operations
+        const client = await MongoClient.connect(process.env.MONGO_DB_STRING);
+        console.log('Connected to database');
+        const db = client.db(companyUrl);
+        const collection = db.collection('fmsMaster');
+
+        
+
+        // Find the document and increment the noofFmsLive field
+    const result = await collection.findOneAndUpdate(
+        { fmsMasterId: req.body.fmsMasterID }, // Filter based on fmsMasterId
+        { $inc: { noOfLive: 1 } }, // Update operation
+        { returnOriginal: false } // Options (returnOriginal: false means return the modified document)
+      );
+  
+      console.log(result);
+
+        // Close the MongoDB connection
+        await client.close();
+        console.log('MongoDB connection closed');
+
+    } catch (error) {
+        console.error('Error posting data:', error);
+        res.status(500).send({ message: 'Error Submitting QA', status: 500 });
+        return;
+    }
+
 
     //////////////////////////////////try catch block to find the user required 
     let employee;
@@ -195,8 +224,11 @@ submitFmsQuestionare.post('/submitFmsUserQAcreateTaskStep1' , async (req, res) =
             stepId : stepId,
             stepType : stepType,
             fmsTaskCreatedTime : new Date(),
-            fmsTaskPlannedCompletionTime : new Date(new Date().setHours(new Date().getHours() + Number(timeHrs.trim())))
-            
+            fmsTaskPlannedCompletionTime : new Date(new Date().setHours(new Date().getHours() + Number(timeHrs.trim()))),
+            formStepsAnswers: null, 
+            fmsTaskQualityDetails : null
+            //qualityStatus : null,
+            //qualityScore : null
             
         });
 

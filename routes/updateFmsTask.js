@@ -8,10 +8,9 @@ const axios = require('axios');
 //fetch the next task , 
 //create a task for that user
 updateFmsTask.post('/updateFmsTask' , async (req, res) => {
-    console.log("inside fms fmsUserQA")
-    console.log(req.body.fmsName)
-
-    console.log(req.body.fmsName);
+    console.log("inside UPDATE FMS TASK")
+    console.log(req.body)
+    
 
     // Initialize variables to hold user details
     let userName = "";
@@ -43,7 +42,7 @@ updateFmsTask.post('/updateFmsTask' , async (req, res) => {
         return;
     }
 
-
+    console.log('FETCHED DETAILS BROM BEARER TOKEN')
     //try block to update the task
     try {
         // Connect to MongoDB and perform operations
@@ -59,21 +58,20 @@ updateFmsTask.post('/updateFmsTask' , async (req, res) => {
         //const update = { $set: { fmsTaskStatus: "COMPLETED" } };
 
         const update = {
-            $set: { fmsTaskStatus: "COMPLETED" },
+            $set: {
+              fmsTaskStatus: "COMPLETED",
+              formStepsAnswers: req.body.formStepsAnswers,
+              fmsTaskQualityDetails : req.body.fmsTaskQualityDetails
+            },
             $currentDate: { at: true }
           };
-
-        //Options object (optional)
-        //const options = { upsert: false }; // Set to true if you want to insert a new document if no documents match the filter
+        
 
         //Perform the update operation
         const result = await collection.updateOne(filter, update);
 
         console.log(result);
-        // res.json({
-        //     "message": `Task is successfully updated`,
-        //     "status": 200
-        // });
+       
 
         // Close the MongoDB connection
         await client.close();
@@ -85,7 +83,142 @@ updateFmsTask.post('/updateFmsTask' , async (req, res) => {
         return;
     }
 
-    res.send("DONE")
+     //try block to fetch the next task
+     let nextTask;
+     let employee;
+     let processId;
+    let plannedDate;
+    let what;
+    let how;
+    let stepId;
+    let stepType;
+    try {
+        // Connect to MongoDB and perform operations
+        const client = await MongoClient.connect(process.env.MONGO_DB_STRING);
+        console.log('Connected to database');
+        const db = client.db(companyUrl);
+        const collection = db.collection('fmsMaster');
+
+        const cursor = collection.find({ fmsMasterId: req.body.fmsMasterID });
+        const documents = await cursor.toArray();
+
+        // Extract the first document
+        const document = documents[0];
+
+        // Find the first object in the "who" array where "typeOfShift" is "All"
+        const whoObject = document.fmsSteps.find(step => step.who.typeOfShift === 'All');
+
+        // Check if the "who" object was found
+        if (!whoObject) {
+        console.log('No "who" object found with typeOfShift "All".');
+        return;
+        }
+
+
+        //documents[0].fmsSteps
+        // nextTask = document.fmsSteps[1 - req.body.stepId]
+        // // Extract the first employee's information from the "employees" array
+        // employee = whoObject.who.employees[0];
+        // processId = document.fmsProcess
+        // plannedDate = document.fmsSteps[1 - req.body.stepId].plannedDate
+        // what = document.fmsSteps[1 - req.body.stepId].what
+        // how = document.fmsSteps[1 - req.body.stepId].how
+        // stepId = document.fmsSteps[1 - req.body.stepId].id
+        // stepType = document.fmsSteps[1 - req.body.stepId].stepType
+        timeHrs = document.fmsSteps[req.body.stepId].plannedDate.duration
+        console.log('Next task is ' , document.fmsSteps[req.body.stepId])
+
+        nextTask = document.fmsSteps[req.body.stepId]
+        // Extract the first employee's information from the "employees" array
+        //employee = whoObject.who.employees[0];
+        employee = document.fmsSteps[req.body.stepId].who.employees[0];
+        processId = document.fmsProcess
+        plannedDate = document.fmsSteps[req.body.stepId].plannedDate
+        what = document.fmsSteps[req.body.stepId].what
+        how = document.fmsSteps[req.body.stepId].how
+        stepId = document.fmsSteps[req.body.stepId].id
+        stepType = document.fmsSteps[req.body.stepId].stepType
+        timeHrs = document.fmsSteps[req.body.stepId].plannedDate.duration
+
+        
+
+
+        // Close the MongoDB connection
+        await client.close();
+        console.log('MongoDB connection closed');
+
+    } catch (error) {
+        console.error('Error posting data:', error);
+        res.status(500).send({ message: 'Error Submitting Fms Task ', status: 500 });
+        return;
+    }
+
+
+    //TRIGGER NEXT TASK IF THE STEP TYPE IS DOER
+    // if(nextTask.stepType == "DOER") {
+        //try catch block to create bext Task
+        try {
+
+            //calculation of fmsTaskPlannedCompletionTime (start time - form submitted time, and tat in hrs or days)
+    
+            // Connect to MongoDB and perform operations
+            const client = await MongoClient.connect(process.env.MONGO_DB_STRING);
+            console.log('Connected to database');
+            const db = client.db(companyUrl);
+            const collection = db.collection('fmsTasks');
+    
+            // Find the last inserted document and get its incremental value
+            const lastDocument = await collection.find().sort({ _id: -1 }).limit(1).toArray();
+            let fmsTaskId = 1;
+    
+            if (lastDocument.length > 0) {
+                fmsTaskId = lastDocument[0].fmsTaskId + 1;
+            }
+    
+            // Inserting data into the collection
+            const result = await collection.insertOne({
+                fmsTaskId,
+                fmsQAId : req.body.fmsQAId,
+                fmsMasterID : req.body.fmsMasterID,
+                fmsName: req.body.fmsName,
+                fmsQA: req.body.fmsQA,
+                formStepsQustions : req.body.formStepsQustions,
+                fmsTaskDoer : employee,
+                fmsTaskStatus : "PENDING",
+                fmsProcessID : processId,
+                plannedDate : plannedDate,
+                what : what,
+                how: how,
+                stepId : stepId,
+                stepType : stepType,
+                fmsTaskCreatedTime : new Date(),
+                fmsTaskPlannedCompletionTime : new Date(new Date().setHours(new Date().getHours() + Number(timeHrs.trim()))),
+                formStepsAnswers: null,
+                fmsTaskQualityDetails : null
+                //qualityStatus : null,
+                //qualityScore : null
+            });
+    
+            console.log(result);
+            console.log('Created the Task');
+            
+    
+            // Close the MongoDB connection
+            await client.close();
+            console.log('MongoDB connection closed');
+    
+        } catch (error) {
+            console.error('Error posting data:', error);
+            res.status(500).send({ message: 'Error Submitting QA', status: 500 });
+            return;
+        }
+
+   // }
+
+   res.json({
+    "message": `Task Updated`,
+    "status": 200
+});
 })
 
 module.exports = updateFmsTask;

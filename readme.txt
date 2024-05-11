@@ -89,7 +89,7 @@ fmsMasterId, fmsQAID, taskID , userID(who ??), processid, status(delayed, on tim
     if qualityStatus is No then , also passing
     3.1. qualityRedoSteps - array of stepId (stepId which is the lowest needs to be retriggered)
     3.2. scrapStatus - true or false (if true, then that fmsQAId needs to stop right there in that step, should not trigger any new task from any other steps)
-
+-for a master id , tou want ana array of objects , wit hall qa id and all tasks for qa id
 
 
 

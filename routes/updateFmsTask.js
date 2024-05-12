@@ -2,6 +2,7 @@ const express = require("express");
 const updateFmsTask = express.Router();
 var MongoClient = require('mongodb').MongoClient;
 const axios = require('axios');
+const { CurrentIST } = require('../helpers/convertGMTtoIST');
 
 //update fms tasks 
 //first it updates the task that is send 
@@ -191,7 +192,7 @@ updateFmsTask.post('/updateFmsTask' , async (req, res) => {
                 how: how,
                 stepId : stepId,
                 stepType : stepType,
-                fmsTaskCreatedTime : new Date(),
+                fmsTaskCreatedTime : CurrentIST(),
                 fmsTaskPlannedCompletionTime : new Date(new Date().setHours(new Date().getHours() + Number(timeHrs.trim()))),
                 formStepsAnswers: null,
                 fmsTaskQualityDetails : null

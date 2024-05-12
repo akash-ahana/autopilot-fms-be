@@ -2,7 +2,6 @@ const express = require("express");
 const initialiseFms = express.Router();
 var MongoClient = require('mongodb').MongoClient;
 const axios = require('axios');
-const auth = require('../../middleware/tokenVerify')
 const moment = require('moment-timezone');
 
 initialiseFms.post('/fmsStep1', async (req, res) => {

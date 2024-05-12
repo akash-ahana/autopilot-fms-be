@@ -381,74 +381,94 @@ getFms.post('/findAllDetailsForOneMasterFms' , async (req, res) => {
         res.status(500).send({ message: `${req.body.fmsName}  NOT found`, status: 500 });
     }
 
-    //usinf aggregation to find all detiald for al the FMS
+    //find the masterfms document that is requested
+    let fmsMasterDocument;
     try {
-        // Connect to MongoDB and perform operations
-        const client = await MongoClient.connect(process.env.MONGO_DB_STRING);
-        console.log('Connected to database');
-        //const db = client.db(companyUrl);
-        
-        const collection = client.db(companyUrl).collection("fmsMaster"); // Replace with your database and collection names
+      // Connect to MongoDB and perform operations
+      const client = await MongoClient.connect(process.env.MONGO_DB_STRING);
+      console.log('Connected to database');
+      const db = client.db(companyUrl);
+      const collection = db.collection('fmsMaster');
 
-    const result = await collection.aggregate([
-      {
-        $lookup: {
-          from: "fms",
-          localField: "fmsMasterId",
-          foreignField: "fmsMasterID",
-          as: "fmsDocuments"
+      // Fething data into from the  collection
+      const query = { fmsMasterId: req.body.fmsMasterId };
+      fmsMasterDocument = await collection.findOne(query);
+
+      console.log(fmsMasterDocument)
+  } catch (error) {
+      console.error('Error Connecting to MongoDB', error);
+      res.status(500).send({ message: `${req.body.fmsMasterId}  NOT found`, status: 500 });
+  }
+
+  //find all fmsQA's(fmsQAid) - (all flows for that fms) for the single fms that is requested
+  let fmsflows;
+  try {
+    // Connect to MongoDB and perform operations
+    const client = await MongoClient.connect(process.env.MONGO_DB_STRING);
+    console.log('Connected to database');
+    const db = client.db(companyUrl);
+    const collection = db.collection('fms');
+
+    const cursor = collection.find({ fmsMasterID: req.body.fmsMasterId });
+    fmsflows = await cursor.toArray();
+
+    console.log(fmsflows)
+} catch (error) {
+    console.error('Error Connecting to MongoDB', error);
+    res.status(500).send({ message: `${req.body.fmsMasterId}  NOT found`, status: 500 });
+}
+
+  //defining the response format for singleFmsFlow(including qa and tasks)
+  let allOneFlowsObject = {
+      fmsSingleQA : null, 
+      allTasksForOneFlow : null
+  }
+
+  let allFlowsDetails = []
+
+  for(let i = 0; i<fmsflows.length;i++){
+      let allTasksForOneFlow;
+        try {
+          // Connect to MongoDB and perform operations
+          const client = await MongoClient.connect(process.env.MONGO_DB_STRING);
+          console.log('Connected to database');
+          const db = client.db(companyUrl);
+          const collection = db.collection('fmsTasks');
+      
+          const cursor = collection.find({ fmsQAId: fmsflows[i].fmsQAId});
+          allTasksForOneFlow = await cursor.toArray();
+
+          allOneFlowsObject = {
+            fmsSingleQA : fmsflows[i], 
+            allTasksForOneFlow : allTasksForOneFlow
         }
-      },
-      {
-        $match: {
-          "fmsQa": {
-            $ne: []
-          }
-        }
-      },
-      {
-        $project: {
-          fmsDocuments: 1
-        }
+
+        allFlowsDetails.push(allOneFlowsObject)
+          
+      
+          console.log(allTasksForOneFlow)
+      } catch (error) {
+          console.error('Error Connecting to MongoDB', error);
+          res.status(500).send({ message: `${req.body.fmsMasterId}  NOT found`, status: 500 });
       }
-    ]).toArray();
 
-        console.log(result);
-        // Fething data into from the  collection
-       // const query = { fmsMasterId: req.body.fmsMasterId };
-       // Execute the aggregation
-        //const result = await db.collection("orders").aggregate(pipeline).toArray();
+  }
+  
 
-        console.log('Requested Fms' , result)
-        console.log(result)
 
-        res.json({
-            "message" : result,
-            "status" : 200
-        })
-        
-
-    } catch (error) {
-        console.error('Error Connecting to MongoDB', error);
-        res.status(500).send({ message: `${req.body.fmsName}  NOT found`, status: 500 });
-    }
+    
 
 
 
 
 
-    // res.json({
-    //     "message" : {
-    //         masterFMS : requestedFms,
-    //         allFlows : [
-    //             {
-    //                 fmsQA : null, 
-    //                 allTasks : null
-    //             }
-    //         ], 
-    //     },
-    //     "status" : 200
-    // })
+    res.json({
+        "message" : {
+            masterFMS : fmsMasterDocument,
+            allFlows : allFlowsDetails
+        },
+        "status" : 200
+    })
 
    
 })

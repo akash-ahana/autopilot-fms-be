@@ -3,7 +3,7 @@ const submitFmsQuestionare = express.Router();
 var MongoClient = require('mongodb').MongoClient;
 const axios = require('axios');
 const moment = require('moment-timezone');
-
+const { CurrentIST } = require('../helpers/convertGMTtoIST');
 
 
 
@@ -224,7 +224,7 @@ submitFmsQuestionare.post('/submitFmsUserQAcreateTaskStep1' , async (req, res) =
             how: how,
             stepId : stepId,
             stepType : stepType,
-            fmsTaskCreatedTime : new Date(),
+            fmsTaskCreatedTime : CurrentIST(),
             fmsTaskPlannedCompletionTime : new Date(new Date().setHours(new Date().getHours() + Number(timeHrs.trim()))),
             formStepsAnswers: null, 
             fmsTaskQualityDetails : null

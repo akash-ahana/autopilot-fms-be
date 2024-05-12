@@ -308,6 +308,111 @@ getFmsTasks.get('/findAllFmsOverdueTasksForUser' , async (req, res) => {
     }
 })
 
+//All Tasks for a process coordinator pc 
+getFmsTasks.get('/findAllFmsOverdueTasksForPc' , async (req, res) => {
+   
+    // Initialize variables to hold user details
+    let userName = "";
+    let userID = "";
+    let companyUrl = "";
+    let userEmail = "";
+
+    console.log(req.headers.authorization)
+      const authHeader = req.headers.authorization;
+      if (!authHeader || !authHeader.startsWith("Bearer")) {
+        console.log("error: Authorization header missing or malformed");
+        return res.status(401).json({ error: 'Unauthorized' });
+      }
+      const token = authHeader.split(" ")[1];
+
+      console.log('token fetched is ' , token)
+
+      try {
+        // Fetch user details and company details based on the token
+        const response = await axios.post(process.env.MAIN_BE_URL, { token: token });
+        console.log('Fetched User Details and Company Details', response.data);
+        userName = response.data.emp_name;
+        userID = response.data.user_id;
+        companyUrl = response.data.verify_company_url;
+        userEmail = response.data.email_id;
+    } catch (error) {
+        console.error('Error posting data:', error);
+        res.status(500).send({ message: 'Error fetching user details', status: 500 });
+        return;
+    }
+
+    //fetching all fms masterId'S THE PC IS PART OF
+    let fmsMasterIds = [];
+    try {
+        // Connect to MongoDB and perform operations
+        const client = await MongoClient.connect(process.env.MONGO_DB_STRING);
+        console.log('Connected to database');
+        const db = client.db(companyUrl);
+        const collection = db.collection('fmsMaster');
+
+        // Query to find documents with processCoordinatorId of 1
+        const query = { "fmsProcess.processCoordinatorId": userID };
+        const projection = { fmsMasterId: 1 }; // Include only fmsMasterId
+        const documents = await collection.find(query, projection).toArray();
+
+        // Extract fmsMasterId values into an array
+        fmsMasterIds = documents.map(doc => doc.fmsMasterId);
+
+        console.log(documents);
+        // res.json({
+        //     "message" : [fmsMasterIds],
+        //     "status" : 200
+        // })
+
+        // Close the MongoDB connection
+        await client.close();
+        console.log('MongoDB connection closed');
+    } 
+    catch (error) {
+        console.error('Error Connecting to MongoDB', error);
+        res.status(500).send({ message: `${req.body.fmsName}  NOT found`, status: 500 });
+    }
+
+    //////////////fetching all  tasks
+    
+    let overDueTasksForPc;
+    try {
+        // Connect to MongoDB and perform operations
+        const client = await MongoClient.connect(process.env.MONGO_DB_STRING);
+        console.log('Connected to database');
+        const db = client.db(companyUrl);
+        const collection = db.collection('fmsTasks');
+
+        // Query to find documents with processCoordinatorId of 1
+        const query = {
+            fmsMasterID: { $in: [...fmsMasterIds] },
+            fmsTaskStatus: "OVERDUE" // Assuming 'isOverdue' is a boolean field indicating if the task is overdue
+          };
+          
+        overDueTasksForPc = await collection.find(query).toArray();
+
+        
+
+        console.log(overDueTasksForPc);
+       
+        // Close the MongoDB connection
+        await client.close();
+        console.log('MongoDB connection closed');
+    } 
+    catch (error) {
+        console.error('Error Connecting to MongoDB', error);
+        res.status(500).send({ message: `${req.body.fmsName}  NOT found`, status: 500 });
+    }
+
+    console.log(fmsMasterIds)
+    console.log(overDueTasksForPc)
+    //res.send(overDueTasksForPc)
+     res.json({
+            "message" : [overDueTasksForPc],
+            "status" : 200
+        })
+})
+
 
 
 

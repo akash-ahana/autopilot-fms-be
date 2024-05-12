@@ -74,7 +74,7 @@ fmsMasterId, fmsQAID, taskID , userID(who ??), processid, status(delayed, on tim
 -CHECK ALL TASKS( THAT ARE PENDING) , FETCH THE PLANNED START TIME , PLANNED COMPLETION TIME , CHANGE STATUS TO oVERDUE  -- THIS IS IN CRON
 -list of tasks for a user is failing
 -in fms master - step id there which is being generated from front end , while updating the steps , this mighrt change , so update that as well
--ADD HOURS LOGIC AS WELL IN BOTH THE TASK TRIGGERING FOR STEP 1 AND TASK UPDATIO
+-ADD DAYS LOGIC AS WELL IN BOTH THE TASK TRIGGERING FOR STEP 1 AND TASK UPDATION
 -add an api to fetch dueToday tasks and all overdue tasks for that employee get request
 -once the fmsQA is submitted in the fms Master add one more firld called live fms's and increment that valur - later once all steps for that qa is completed decrement this value 
 -for manage fms - admin and pc 
@@ -89,7 +89,25 @@ fmsMasterId, fmsQAID, taskID , userID(who ??), processid, status(delayed, on tim
     if qualityStatus is No then , also passing
     3.1. qualityRedoSteps - array of stepId (stepId which is the lowest needs to be retriggered)
     3.2. scrapStatus - true or false (if true, then that fmsQAId needs to stop right there in that step, should not trigger any new task from any other steps)
--for a master id , tou want ana array of objects , wit hall qa id and all tasks for qa id
+-for a master id , tou want ana array of objects , with hall qa id and all tasks for qa id
+--/findAllFmsOverdueTasksForPc
+--for every task add one more field if it is on time or delayed after apdating that task , if it is delayed add one omre field to calculate the delay
+--in every single fms, we need to calculate 4 data points
+    Total number of tasks those are pending
+    Total number of tasks those are overdue
+    Percentage of Overdue tasks - [ number of overdue tasks/ (number of overdue + number of pending) ]
+    Percentage of delayed tasks - [ number of delayed tasks / number of completed tasks ]
+-deploy latest frontend , give KT to developers and Testers 
+-change task plannedCompletionTime , taskCreationTime to IST in fmsTasks
+-fix backend deployment in AWS including reading .env for both Microservices
+-in fms collection change fmsMasterID to fmsMasterId -- to keep it 100% Uniform
+-add proper request payloads to all API's in Postman Collection
+-THIS IS HUGE -- ADD QALITY RELATED API AND VALIDATION AND LOGIC
+
+--previos task info api send the task id aswell in response , 
+--if it is no {}
+--if scrape is true -- do not create any more task 
+--
 
 
 

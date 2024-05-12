@@ -326,6 +326,133 @@ getFms.post('/findPreviousStepsDetails' , async (req, res) => {
     }
 })
 
+//find  Single FMS all QA and all tasks for that QA
+getFms.post('/findAllDetailsForOneMasterFms' , async (req, res) => {
+    
+    // Initialize variables to hold user details
+    let userName = "";
+    let userID = "";
+    let companyUrl = "";
+    let userEmail = "";
+
+    console.log(req.headers.authorization)
+      const authHeader = req.headers.authorization;
+      if (!authHeader || !authHeader.startsWith("Bearer")) {
+        console.log("error: Authorization header missing or malformed");
+        return res.status(401).json({ error: 'Unauthorized' });
+      }
+      const token = authHeader.split(" ")[1];
+
+      console.log('token fetched is ' , token)
+
+      try {
+        // Fetch user details and company details based on the token
+        const response = await axios.post(process.env.MAIN_BE_URL, { token: token });
+        console.log('Fetched User Details and Company Details', response.data);
+        userName = response.data.emp_name;
+        userID = response.data.user_id;
+        companyUrl = response.data.verify_company_url;
+        userEmail = response.data.email_id;
+    } catch (error) {
+        console.error('Error posting data:', error);
+        res.status(500).send({ message: 'Error fetching user details', status: 500 });
+        return;
+    }
+
+    //find the requested FMS
+    let requestedFms;
+    try {
+        // Connect to MongoDB and perform operations
+        const client = await MongoClient.connect(process.env.MONGO_DB_STRING);
+        console.log('Connected to database');
+        const db = client.db(companyUrl);
+        const collection = db.collection('fmsMaster');
+
+        // Fething data into from the  collection
+        const query = { fmsMasterId: req.body.fmsMasterId };
+        requestedFms = await collection.findOne(query);
+
+        console.log('Requested Fms' , requestedFms)
+        console.log(requestedFms)
+        
+
+    } catch (error) {
+        console.error('Error Connecting to MongoDB', error);
+        res.status(500).send({ message: `${req.body.fmsName}  NOT found`, status: 500 });
+    }
+
+    //usinf aggregation to find all detiald for al the FMS
+    try {
+        // Connect to MongoDB and perform operations
+        const client = await MongoClient.connect(process.env.MONGO_DB_STRING);
+        console.log('Connected to database');
+        //const db = client.db(companyUrl);
+        
+        const collection = client.db(companyUrl).collection("fmsMaster"); // Replace with your database and collection names
+
+    const result = await collection.aggregate([
+      {
+        $lookup: {
+          from: "fms",
+          localField: "fmsMasterId",
+          foreignField: "fmsMasterID",
+          as: "fmsDocuments"
+        }
+      },
+      {
+        $match: {
+          "fmsQa": {
+            $ne: []
+          }
+        }
+      },
+      {
+        $project: {
+          fmsDocuments: 1
+        }
+      }
+    ]).toArray();
+
+        console.log(result);
+        // Fething data into from the  collection
+       // const query = { fmsMasterId: req.body.fmsMasterId };
+       // Execute the aggregation
+        //const result = await db.collection("orders").aggregate(pipeline).toArray();
+
+        console.log('Requested Fms' , result)
+        console.log(result)
+
+        res.json({
+            "message" : result,
+            "status" : 200
+        })
+        
+
+    } catch (error) {
+        console.error('Error Connecting to MongoDB', error);
+        res.status(500).send({ message: `${req.body.fmsName}  NOT found`, status: 500 });
+    }
+
+
+
+
+
+    // res.json({
+    //     "message" : {
+    //         masterFMS : requestedFms,
+    //         allFlows : [
+    //             {
+    //                 fmsQA : null, 
+    //                 allTasks : null
+    //             }
+    //         ], 
+    //     },
+    //     "status" : 200
+    // })
+
+   
+})
+
 
 
 module.exports = getFms;

@@ -215,7 +215,6 @@ submitFmsQuestionare.post('/submitFmsUserQAcreateTaskStep1' , async (req, res) =
             fmsMasterID : req.body.fmsMasterID,
             fmsName: req.body.fmsName,
             fmsQA: req.body.fmsQA,
-           
             fmsTaskDoer : employee,
             fmsTaskStatus : "PENDING",
             fmsProcessID : processId,
@@ -227,9 +226,9 @@ submitFmsQuestionare.post('/submitFmsUserQAcreateTaskStep1' , async (req, res) =
             fmsTaskCreatedTime : CurrentIST(),
             fmsTaskPlannedCompletionTime : new Date(new Date().setHours(new Date().getHours() + Number(timeHrs.trim()))),
             formStepsAnswers: null, 
-            fmsTaskQualityDetails : null
-            //qualityStatus : null,
-            //qualityScore : null
+            fmsTaskQualityDetails : null,
+            isTransferredFrom: false,    //is this task transferred FROM other Doer
+            isTranferredTo: false       //is this task transferred TO other Doer
             
         });
 

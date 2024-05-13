@@ -103,11 +103,13 @@ fmsMasterId, fmsQAID, taskID , userID(who ??), processid, status(delayed, on tim
 -in fms collection change fmsMasterID to fmsMasterId -- to keep it 100% Uniform
 -add proper request payloads to all API's in Postman Collection
 -THIS IS HUGE -- ADD QALITY RELATED API AND VALIDATION AND LOGIC
+-if task goes beyong planned date/time, status is not changing to OVERDUE. 
 
 --previos task info api send the task id aswell in response , 
 --if it is no {}
 --if scrape is true -- do not create any more task 
 --taskcreationTimeis changed to IST , plannedCompletionTime change that as well to IST -- ADD LOGICS FOR DAYS , VALIDATION FOR HOLIDAYS
+--add step Id for previousStepDetails 
 
 
 

@@ -95,4 +95,12 @@ transferFmsTask.post("/transferFmsTask", async (req, res) => {
   }
 });
 
+
+// in request bodb he will send the task that is to be transferred 
+// in this API /submitFmsUserQAcreateTaskStep1 THE LAST TRY CATCH BLOCK IS CREATING THE TASK
+// IN THIS aPI /updateFmsTas THE LAST TRY CATCH WE ARE  CREATING A TASK
+// add these filds in both these API while creating a task - isTransferredFrom(null if it not transferrd from any other task , otherwise store the transferredfrom taskId) and isTrsansferredTo(NULL INITIALLY , IF IT IS TRANSFERRED STORE THE NEXT TaskId) 
+// ADD ONE MORE FIELD tasktRANFERREDBy - in task  QA(add the QA created by details only), 
+//AND THEN UPDATE THE DOER FOT THAT TASK
+
 module.exports = transferFmsTask;

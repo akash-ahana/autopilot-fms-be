@@ -56,10 +56,10 @@ transferFmsTask.post("/transferFmsTask", async (req, res) => {
      const result = await collection.insertOne({
       fmsTaskId,
       fmsQAId : req.body.fmsQAId,
-      fmsMasterID : req.body.fmsMasterID,
+      fmsQACreatedBy : req.body.fmsQACreatedBy,
+      fmsMasterId : req.body.fmsMasterID,
       fmsName: req.body.fmsName,
       fmsQA: req.body.fmsQA,
-      formStepsQustions : req.body.formStepsQustions,
       fmsTaskDoer : req.body.newDoer,
       fmsTaskStatus : "PENDING",
       fmsProcessID : req.body.processId,
@@ -74,8 +74,10 @@ transferFmsTask.post("/transferFmsTask", async (req, res) => {
       fmsTaskPlannedCompletionTime : req.body.fmsTaskPlannedCompletionTime,
       formStepsAnswers: null,
       fmsTaskQualityDetails : null,
-      isTransferredFrom: true,    //is this task transferred FROM other Doer
-      isTranferredTo: false       //is this task transferred TO other Doer
+      isTransferredFrom: true,    //is this task transferred FROM other Task
+      isTranferredTo: false,       //is this task transferred TO other Task
+      transferredFromTaskId : req.body.fmsTaskId, 
+      transferredToTaskId : null
   });
 
       console.log(result);

@@ -180,7 +180,7 @@ updateFmsTask.post('/updateFmsTask' , async (req, res) => {
             const result = await collection.insertOne({
                 fmsTaskId,
                 fmsQAId : req.body.fmsQAId,
-                fmsMasterID : req.body.fmsMasterID,
+                fmsMasterId : req.body.fmsMasterID,
                 fmsName: req.body.fmsName,
                 fmsQA: req.body.fmsQA,
                 formStepsQustions : req.body.formStepsQustions,
@@ -198,6 +198,8 @@ updateFmsTask.post('/updateFmsTask' , async (req, res) => {
                 fmsTaskQualityDetails : null,
                 isTransferredFrom: false,    //is this task transferred FROM other Doer
                 isTranferredTo: false,       //is this task transferred TO other Doer
+                transferredFromTaskId : null, 
+                transferredToTaskId : null
                 
             });
     

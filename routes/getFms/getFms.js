@@ -194,51 +194,7 @@ getFms.get('/findFmsQuestionaresForUser' , async (req, res) => {
 
 })
 
-//Get All DATES from fms questionare
-getFms.post('/getAllFmsDates' , (req, res) => {
 
-    
-    
-   let fmsName = req.body.fmsName;
-
-   MongoClient.connect(process.env.MONGO_DB_STRING)
-   .then(async client => {
-       console.log('Connected to database')
-       const db = client.db('fmsDb')
-       const collection = db.collection('fmsCollection') 
-
-       
-       // Fething data into from the  collection
-       //const query = { fmsName: req.body.fmsName };
-
-       // Projection to include only the first name in the result
-        //const projection = { "fmsQuestionare.question": 1, _id: 0 };
-       //const document = await collection.findOne(query);
-       //const cursor = collection.findOne(query);
-       const document = await collection.findOne({ "fmsName": fmsName });
-
-       if (!document) {
-        return res.status(404).send('No document found with the provided fmsName');
-        }
-
-    const dateQuestions = document.fmsQuestionare.filter(question => question.answerType === "DATE");
-
-    //res.json(dateQuestions);
-
-       console.log(document)
-       res.json({
-           "message" : dateQuestions,
-           "status" : 200
-       })
-   })
-   .catch(error => {
-       console.error('Error Connecting to MongoDB' , error)
-       res.json({
-           "message" : `${req.body.fmsName} Coul Not Find FMS`,
-           "status" : 500
-       })
-   })
-})
 
 
 
@@ -409,7 +365,7 @@ getFms.post('/findAllDetailsForOneMasterFms' , async (req, res) => {
     const db = client.db(companyUrl);
     const collection = db.collection('fms');
 
-    const cursor = collection.find({ fmsMasterID: req.body.fmsMasterId });
+    const cursor = collection.find({ fmsMasterId: req.body.fmsMasterId });
     fmsflows = await cursor.toArray();
 
     console.log(fmsflows)
@@ -551,7 +507,7 @@ try {
   const db = client.db(companyUrl);
   const collection = db.collection('fms');
 
-  const cursor = collection.find({ fmsMasterID: req.body.fmsMasterId });
+  const cursor = collection.find({ fmsMasterId: req.body.fmsMasterId });
   fmsflows = await cursor.toArray();
 
   //console.log(fmsflows)
@@ -659,7 +615,7 @@ for(let i = 1; i<=fmsMasterDocument.fmsSteps.length;i++) {
         const db = client.db(companyUrl);
         const collection = db.collection('fmsTasks');
     
-        const cursor = collection.find({fmsMasterID : req.body.fmsMasterId ,stepId:i});
+        const cursor = collection.find({fmsMasterId : req.body.fmsMasterId ,stepId:i});
         allTasksForOneFlowForStep = await cursor.toArray();
 
         console.log('allTasksForOneFlowForStep', i  , allTasksForOneFlowForStep)

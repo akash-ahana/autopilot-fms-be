@@ -145,6 +145,7 @@ formula to calculate planned end time
     check if 
 
 -while updating a task , when checking if there exists a next task , if there is no next task (which means it is end of that flow ) update in fms for that fmsQAId as false , and change no noOfLive in fmsMaster (decrease by one) 
+-in previous step detials ad step id for this API /findPreviousStepsDetails
 
 
 

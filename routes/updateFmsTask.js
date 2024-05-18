@@ -10,7 +10,7 @@ const { CurrentIST } = require('../helpers/convertGMTtoIST');
 //create a task for that user
 updateFmsTask.post('/updateFmsTask' , async (req, res) => {
     console.log("inside UPDATE FMS TASK")
-    console.log(req.body)
+    //console.log(req.body)
     
 
     // Initialize variables to hold user details
@@ -19,31 +19,31 @@ updateFmsTask.post('/updateFmsTask' , async (req, res) => {
     let companyUrl = "";
     let userEmail = "";
 
-    console.log(req.headers.authorization)
+    //console.log(req.headers.authorization)
       const authHeader = req.headers.authorization;
       if (!authHeader || !authHeader.startsWith("Bearer")) {
-        console.log("error: Authorization header missing or malformed");
+        //console.log("error: Authorization header missing or malformed");
         return res.status(401).json({ error: 'Unauthorized' });
       }
       const token = authHeader.split(" ")[1];
 
-      console.log('token fetched is ' , token)
+      //console.log('token fetched is ' , token)
 
     try {
         // Fetch user details and company details based on the token
         const response = await axios.post(process.env.MAIN_BE_URL, { token: token });
-        console.log('Fetched User Details and Company Details', response.data);
+        //console.log('Fetched User Details and Company Details', response.data);
         userName = response.data.emp_name;
         userID = response.data.user_id;
         companyUrl = response.data.verify_company_url;
         userEmail = response.data.email_id;
     } catch (error) {
-        console.error('Error posting data:', error);
+        //console.error('Error posting data:', error);
         res.status(500).send({ message: 'Error fetching user details', status: 500 });
         return;
     }
 
-    console.log('FETCHED DETAILS BROM BEARER TOKEN')
+    //console.log('FETCHED DETAILS BROM BEARER TOKEN')
     //try block to update the task
     try {
         // Connect to MongoDB and perform operations
@@ -83,6 +83,7 @@ updateFmsTask.post('/updateFmsTask' , async (req, res) => {
         res.status(500).send({ message: 'Error Submitting QA', status: 500 });
         return;
     }
+    console.log('updated the task')
 
      //try block to fetch the next task
      let nextTask;
@@ -105,6 +106,7 @@ updateFmsTask.post('/updateFmsTask' , async (req, res) => {
 
         // Extract the first document
         const document = documents[0];
+        console.log(document)
 
         // Find the first object in the "who" array where "typeOfShift" is "All"
         const whoObject = document.fmsSteps.find(step => step.who.typeOfShift === 'All');

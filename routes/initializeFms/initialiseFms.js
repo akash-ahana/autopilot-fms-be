@@ -245,7 +245,7 @@ initialiseFms.post('/createFmsQuestionare' , async (req, res) => {
 
         // Close the MongoDB connection
         await client.close();
-        console.log('MongoDB connection closed');
+        //console.log('MongoDB connection closed');
 
     }
     catch (error) {
@@ -256,6 +256,8 @@ initialiseFms.post('/createFmsQuestionare' , async (req, res) => {
 
 //CREATE FMS Steps
 initialiseFms.post('/createFmsSteps' , async (req, res) => {
+    console.log('inside /createFmsSteps')
+    console.log(req.body)
 
     // Initialize variables to hold user details
     let userName = "";
@@ -281,6 +283,7 @@ initialiseFms.post('/createFmsSteps' , async (req, res) => {
         userID = response.data.user_id;
         companyUrl = response.data.verify_company_url;
         userEmail = response.data.email_id;
+        
     } catch (error) {
         console.error('Error posting data:', error);
         res.status(500).send({ message: 'Error fetching user details', status: 500 });
@@ -371,7 +374,7 @@ initialiseFms.post('/makeFmsLive' , async (req, res) => {
         const collection = db.collection('fmsMaster');
 
         const filter = { fmsName : req.body.fmsName };
-    const update = { $set: { fmsLive : req.body.fmsLive } };
+    const update = { $set: { fmsLive : req.body.fmsLive } };   //fmsLive means that fms is active
     const options = { upsert: true };
     
     const result = await collection.updateOne(filter, update, options);

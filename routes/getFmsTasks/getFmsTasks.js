@@ -351,14 +351,15 @@ getFmsTasks.get('/findAllFmsOverdueTasksForPc' , async (req, res) => {
         const collection = db.collection('fmsMaster');
 
         // Query to find documents with processCoordinatorId of 1
-        const query = { "fmsProcess.processCoordinatorId": userID };
-        const projection = { fmsMasterId: 1 }; // Include only fmsMasterId
-        const documents = await collection.find(query, projection).toArray();
+        const query = { "fmsProcess.processCoordinatorName": userName };
+        //const projection = { fmsMasterId: 2 }; // Include only fmsMasterId
+        const documents = await collection.find(query).toArray();
 
         // Extract fmsMasterId values into an array
         fmsMasterIds = documents.map(doc => doc.fmsMasterId);
 
-        console.log(documents);
+        console.log('fms  the pc is part of ' , userName)
+        console.log(fmsMasterIds);
         // res.json({
         //     "message" : [fmsMasterIds],
         //     "status" : 200
@@ -379,13 +380,13 @@ getFmsTasks.get('/findAllFmsOverdueTasksForPc' , async (req, res) => {
     try {
         // Connect to MongoDB and perform operations
         const client = await MongoClient.connect(process.env.MONGO_DB_STRING);
-        console.log('Connected to database');
+        console.log('Connected to database to get overDueTasksForPc');
         const db = client.db(companyUrl);
         const collection = db.collection('fmsTasks');
 
         // Query to find documents with processCoordinatorId of 1
         const query = {
-            fmsMasterID: { $in: [...fmsMasterIds] },
+            fmsMasterId: { $in: fmsMasterIds },
             fmsTaskStatus: "OVERDUE" // Assuming 'isOverdue' is a boolean field indicating if the task is overdue
           };
           

@@ -6,6 +6,10 @@ const { ObjectId } = require("mongodb");
 
 // transfer FMS using
 transferFmsTask.post("/transferFmsTask", async (req, res) => {
+  console.log('INSIDE TRANSFER FMS TASK ----------------------------------------------------')
+  console.log('INSIDE TRANSFER FMS TASK ----------------------------------------------------')
+  console.log('INSIDE TRANSFER FMS TASK ----------------------------------------------------')
+  console.log(req.body)
   // Initialize variables to hold user details
   let userName = "";
   let userID = "";
@@ -15,23 +19,23 @@ transferFmsTask.post("/transferFmsTask", async (req, res) => {
   console.log(req.headers.authorization)
     const authHeader = req.headers.authorization;
     if (!authHeader || !authHeader.startsWith("Bearer")) {
-      console.log("error: Authorization header missing or malformed");
+      //console.log("error: Authorization header missing or malformed");
       return res.status(401).json({ error: 'Unauthorized' });
     }
     const token = authHeader.split(" ")[1];
 
-    console.log('token fetched is ' , token)
+    //console.log('token fetched is ' , token)
 
   try {
       // Fetch user details and company details based on the token
       const response = await axios.post(process.env.MAIN_BE_URL, { token: token });
-      console.log('Fetched User Details and Company Details', response.data);
+      //console.log('Fetched User Details and Company Details', response.data);
       userName = response.data.emp_name;
       userID = response.data.user_id;
       companyUrl = response.data.verify_company_url;
       userEmail = response.data.email_id;
   } catch (error) {
-      console.error('Error posting data:', error);
+      //console.error('Error posting data:', error);
       res.status(500).send({ message: 'Error fetching user details', status: 500 });
       return;
   }
@@ -40,7 +44,7 @@ transferFmsTask.post("/transferFmsTask", async (req, res) => {
   try {
     // Connect to MongoDB and perform operations
     const client = await MongoClient.connect(process.env.MONGO_DB_STRING);
-    console.log("Connected to database");
+    //console.log("Connected to database");
     const db = client.db(companyUrl);
     const collection = db.collection("fmsTasks");
 
@@ -55,27 +59,32 @@ transferFmsTask.post("/transferFmsTask", async (req, res) => {
      // Inserting data into the collection
      const result = await collection.insertOne({
       fmsTaskId,
-      fmsQAId : req.body.fmsQAId,
-      fmsMasterID : req.body.fmsMasterID,
-      fmsName: req.body.fmsName,
-      fmsQA: req.body.fmsQA,
-      formStepsQustions : req.body.formStepsQustions,
-      fmsTaskDoer : req.body.newDoer,
-      fmsTaskStatus : "PENDING",
-      fmsProcessID : req.body.processId,
-      plannedDate : req.body.plannedDate,
-      what : req.body.what,
-      how: req.body.how,
-      stepId : req.body.stepId,
-      stepType : req.body.stepType,
+      fmsQAId : req.body.task.fmsQAId,
+      fmsQACreatedBy : req.body.task.fmsQACreatedBy,
+      fmsMasterId : req.body.task.fmsMasterId,
+      fmsName: req.body.task.fmsName,
+      fmsQA: req.body.task.fmsQA,
+      fmsTaskDoer : req.body.fmsTransferredToUser,
+      fmsTaskStatus : "OVERDUE",
+      fmsTaskCompletedStatus : req.body.task.fmsTaskCompletedStatus,  //either ONTIME OR DELAYED
+      fmsProcessID : req.body.task.fmsProcessID,
+      plannedDate : req.body.task.plannedDate,
+      what : req.body.task.what,
+      how: req.body.task.how,
+      stepId : req.body.task.stepId,
+      stepType : req.body.task.stepType,
       //fmsTaskCreatedTime : CurrentIST(),
       //fmsTaskPlannedCompletionTime : new Date(new Date().setHours(new Date().getHours() + Number(timeHrs.trim()))),
-      fmsTaskCreatedTime : req.body.fmsTaskCreatedTime,
-      fmsTaskPlannedCompletionTime : req.body.fmsTaskPlannedCompletionTime,
+      fmsTaskCreatedTime : req.body.task.fmsTaskCreatedTime,
+      fmsTaskPlannedCompletionTime : req.body.task.fmsTaskPlannedCompletionTime,
       formStepsAnswers: null,
       fmsTaskQualityDetails : null,
-      isTransferredFrom: true,    //is this task transferred FROM other Doer
-      isTranferredTo: false       //is this task transferred TO other Doer
+      fmsTaskTransferredFrom : req.body.task.fmsTaskDoer,
+      isTransferredFrom: true,    //is this task transferred FROM other Task
+      isTranferredTo: false,       //is this task transferred TO other Task
+      transferredFromTaskId : req.body.task.fmsTaskId, 
+      transferredToTaskId : null,
+      
   });
 
       console.log(result);
@@ -84,15 +93,17 @@ transferFmsTask.post("/transferFmsTask", async (req, res) => {
 
       // Close the MongoDB connection
       await client.close();
-      console.log('MongoDB connection closed');
+      //console.log('MongoDB connection closed');
 
-      console.log("New task created for new Doer", newTaskDocument);
+      //console.log("New task created for new Doer", newTaskDocument);
 
     //res.json({ message: "Task transferred successfully", status: 200 });
   } catch (error) {
     console.error("Error Connecting to MongoDB", error);
     res.status(500).send({ message: "Error transferring task", status: 500 });
   }
+
+  res.json({ message: "Task transferred successfully", status: 200 });
 });
 
 

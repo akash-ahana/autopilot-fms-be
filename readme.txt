@@ -112,6 +112,43 @@ fmsMasterId, fmsQAID, taskID , userID(who ??), processid, status(delayed, on tim
 --add step Id for previousStepDetails 
 
 
+--calculate proper plannedcompletion time
+--tat in days 
+
+<60 mins 
+<
+
+-infmsSteps change plannedDate name to plannedTime
+-change timeHrs to duration - variable name
+in 
+-in fmsTASKS - taskCreatedTime is wrong 
+
+
+sumission of form --> fmsTaskCreatedTime
+
+for hrs --> 2 conditions --> INSIDE || OUTSIDE
+if(INSIDE) {
+    if(taskCreatedTime + duration < thatDaysendTime) {
+        plannedEndTime = 
+    }
+}
+
+// AIM is to Calculate plannedCompletionTime
+if durationType is "hrs" -> fetch even "working" which will be either "INSIDE" or "OUTSIDE"
+if durationType is "days" -> working is manually set to null
+
+formula to calculate planned end time
+ available info - taskCreatedTime
+ add either "days" or "hrs" to taskCreatedTime
+
+ --logic for updating a task 
+    check if 
+
+-while updating a task , when checking if there exists a next task , if there is no next task (which means it is end of that flow ) update in fms for that fmsQAId as false , and change no noOfLive in fmsMaster (decrease by one) 
+-in previous step detials ad step id for this API /findPreviousStepsDetails
+
+
+
 
 
 

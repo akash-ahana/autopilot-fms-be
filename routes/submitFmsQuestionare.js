@@ -691,8 +691,6 @@ submitFmsQuestionare.post('/submitFmsUserQAcreateTaskStep1Test', async (req, res
     let how;
     let stepId;
     let stepType;
-    //let r;
-    //let durationType;
     let plannedType;
 
     try {
@@ -838,6 +836,7 @@ submitFmsQuestionare.post('/submitFmsUserQAcreateTaskStep1Test', async (req, res
             plannedCompletionTime = calculatePlannedCompletionTime(currentTime, timeIST * 24, shiftStartTime, shiftEndTime, holidayNonWorkingDays);
         }
 
+        const currentDate = moment().tz('Asia/Kolkata').format();
         // Inserting data into the collection
         const result = await collection.insertOne({
             fmsTaskId,
@@ -854,12 +853,15 @@ submitFmsQuestionare.post('/submitFmsUserQAcreateTaskStep1Test', async (req, res
             how: how,
             stepId: stepId,
             stepType: stepType,
-            fmsTaskCreatedTime: CurrentIST(),
+            fmsTaskCreatedTime: currentDate,
             fmsTaskPlannedCompletionTime: plannedCompletionTime,
+            fmsTaskTransferredFrom : null,
             formStepsAnswers: null,
             fmsTaskQualityDetails: null,
             isTransferredFrom: false,    //is this task transferred FROM other Doer
-            isTranferredTo: false       //is this task transferred TO other Doer
+            isTranferredTo: false,       //is this task transferred TO other Doer
+            transferredFromTaskId : null, 
+            transferredToTaskId : null
         });
 
         console.log(result);

@@ -9,7 +9,9 @@ const { CurrentIST } = require('../helpers/convertGMTtoIST');
 //fetch the next task , 
 //create a task for that user
 updateFmsTask.post('/updateFmsTask' , async (req, res) => {
-    console.log("inside UPDATE FMS TASK")
+    console.log("inside UPDATE FMS TASK -----------------------------------------------------------")
+    console.log("inside UPDATE FMS TASK -----------------------------------------------------------")
+    console.log("inside UPDATE FMS TASK -----------------------------------------------------------")
     //console.log(req.body)
     
 
@@ -94,6 +96,13 @@ updateFmsTask.post('/updateFmsTask' , async (req, res) => {
     let how;
     let stepId;
     let stepType;
+    let fmsTaskTransferredFrom;
+    let formStepsAnswers;
+    let fmsTaskQualityDetails;
+    let isTransferredFrom;   
+    let isTranferredTo;   
+    let transferredFromTaskId;
+    let transferredToTaskId;   
     try {
         // Connect to MongoDB and perform operations
         const client = await MongoClient.connect(process.env.MONGO_DB_STRING);
@@ -142,6 +151,11 @@ updateFmsTask.post('/updateFmsTask' , async (req, res) => {
         stepId = document.fmsSteps[req.body.stepId].id
         stepType = document.fmsSteps[req.body.stepId].stepType
         timeHrs = document.fmsSteps[req.body.stepId].plannedDate.duration
+        fmsTaskTransferredFrom = document.fmsSteps[req.body.stepId].plannedDate.fmsTaskTransferredFrom
+        formStepsAnswers =  document.fmsSteps[req.body.stepId].plannedDate.formStepsAnswers
+        fmsTaskQualityDetails = document.fmsSteps[req.body.stepId].plannedDate.fmsTaskQualityDetails
+        isTransferredFrom = document.fmsSteps[req.body.stepId].plannedDate.isTransferredFrom
+        isTranferredTo = document.fmsSteps[req.body.stepId].plannedDate.isTranferredTo
 
         
 
@@ -199,6 +213,8 @@ updateFmsTask.post('/updateFmsTask' , async (req, res) => {
                 fmsTaskPlannedCompletionTime : new Date(new Date().setHours(new Date().getHours() + Number(timeHrs.trim()))),
                 formStepsAnswers: null,
                 fmsTaskQualityDetails : null,
+                fmsTaskTransferredFrom : null,
+                fmsTaskTransferredFrom : null,
                 isTransferredFrom: false,    //is this task transferred FROM other Doer
                 isTranferredTo: false,       //is this task transferred TO other Doer
                 transferredFromTaskId : null, 

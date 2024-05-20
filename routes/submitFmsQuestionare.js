@@ -516,7 +516,7 @@ submitFmsQuestionare.post('/submitFmsUserQAcreateTaskStep1', async (req, res) =>
             }
         }
 
-
+        const currentDate = moment().tz('Asia/Kolkata').format();
         // Inserting data into the collection
         const result = await collection.insertOne({
             fmsTaskId,
@@ -527,13 +527,14 @@ submitFmsQuestionare.post('/submitFmsUserQAcreateTaskStep1', async (req, res) =>
             fmsQA: req.body.fmsQA,
             fmsTaskDoer: employee,
             fmsTaskStatus: "PENDING",
+            fmsTaskCompletedStatus : "null",  //either ONTIME OR DELAYED
             fmsProcessID: processId,
             plannedDate: plannedDate,
             what: what,
             how: how,
             stepId: stepId,
             stepType: stepType,
-            fmsTaskCreatedTime: CurrentIST(),
+            fmsTaskCreatedTime: currentDate,
             //fmsTaskPlannedCompletionTime : new Date(new Date().setHours(new Date().getHours() + Number(duration.trim()))),
             fmsTaskPlannedCompletionTime: plannedCompletionTime,
             //const plannedCompletionTimeIST = moment().add(Number(duration.trim()), 'hours').tz('Asia/Kolkata').toDate();

@@ -6,6 +6,8 @@ const { ObjectId } = require("mongodb");
 
 // transfer FMS using
 transferFmsTask.post("/transferFmsTask", async (req, res) => {
+  console.log('INSIDE TRANSFER FMS TASK')
+  console.log(req.body)
   // Initialize variables to hold user details
   let userName = "";
   let userID = "";
@@ -55,28 +57,29 @@ transferFmsTask.post("/transferFmsTask", async (req, res) => {
      // Inserting data into the collection
      const result = await collection.insertOne({
       fmsTaskId,
-      fmsQAId : req.body.fmsQAId,
-      fmsQACreatedBy : req.body.fmsQACreatedBy,
-      fmsMasterId : req.body.fmsMasterID,
-      fmsName: req.body.fmsName,
-      fmsQA: req.body.fmsQA,
-      fmsTaskDoer : req.body.newDoer,
+      fmsQAId : req.body.task.fmsQAId,
+      fmsQACreatedBy : req.body.task.fmsQACreatedBy,
+      fmsMasterId : req.body.task.fmsMasterID,
+      fmsName: req.body.task.fmsName,
+      fmsQA: req.body.task.fmsQA,
+      fmsTaskDoer : req.body.task.fmsTransferredToUser,
       fmsTaskStatus : "PENDING",
-      fmsProcessID : req.body.processId,
-      plannedDate : req.body.plannedDate,
-      what : req.body.what,
-      how: req.body.how,
-      stepId : req.body.stepId,
-      stepType : req.body.stepType,
+      fmsTaskCompletedStatus : req.body.task.fmsTaskCompletedStatus,  //either ONTIME OR DELAYED
+      fmsProcessID : req.body.task.processId,
+      plannedDate : req.body.task.plannedDate,
+      what : req.body.task.what,
+      how: req.body.task.how,
+      stepId : req.body.task.stepId,
+      stepType : req.body.task.stepType,
       //fmsTaskCreatedTime : CurrentIST(),
       //fmsTaskPlannedCompletionTime : new Date(new Date().setHours(new Date().getHours() + Number(timeHrs.trim()))),
-      fmsTaskCreatedTime : req.body.fmsTaskCreatedTime,
-      fmsTaskPlannedCompletionTime : req.body.fmsTaskPlannedCompletionTime,
+      fmsTaskCreatedTime : req.body.task.fmsTaskCreatedTime,
+      fmsTaskPlannedCompletionTime : req.body.task.fmsTaskPlannedCompletionTime,
       formStepsAnswers: null,
       fmsTaskQualityDetails : null,
       isTransferredFrom: true,    //is this task transferred FROM other Task
       isTranferredTo: false,       //is this task transferred TO other Task
-      transferredFromTaskId : req.body.fmsTaskId, 
+      transferredFromTaskId : req.body.task.fmsTaskId, 
       transferredToTaskId : null
   });
 
@@ -88,7 +91,7 @@ transferFmsTask.post("/transferFmsTask", async (req, res) => {
       await client.close();
       console.log('MongoDB connection closed');
 
-      console.log("New task created for new Doer", newTaskDocument);
+      //console.log("New task created for new Doer", newTaskDocument);
 
     //res.json({ message: "Task transferred successfully", status: 200 });
   } catch (error) {

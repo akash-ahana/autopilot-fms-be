@@ -43,7 +43,7 @@ updateFmsTask.post('/updateFmsTask' , async (req, res) => {
         return;
     }
 
-    //console.log('FETCHED DETAILS BROM BEARER TOKEN')
+    //console.log('FETCHED DETAILS FROM BEARER TOKEN')
     //try block to update the task
     try {
         // Connect to MongoDB and perform operations
@@ -188,6 +188,7 @@ updateFmsTask.post('/updateFmsTask' , async (req, res) => {
                 formStepsQustions : req.body.formStepsQustions,
                 fmsTaskDoer : employee,
                 fmsTaskStatus : "PENDING",
+                fmsTaskCompletedStatus : "null",  //either ONTIME OR DELAYED
                 fmsProcessID : processId,
                 plannedDate : plannedDate,
                 what : what,

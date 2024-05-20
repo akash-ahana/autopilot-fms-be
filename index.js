@@ -133,6 +133,10 @@ app.use("/transferFmsTask", transferFmsTask);
 const fmsTasksPerformance = require("./routes/fmsTasksPerformanceCalculation");
 app.use("/fmsPerformance", fmsTasksPerformance);
 
+//----------------------------------------------------------------------//
+const dbCreation = require("./routes/dbCreate");
+app.use("/dbCreate", dbCreation);
+
 
 var server = app.listen(process.env.PORT, function () {
    console.log(`Express App running on PORT ${process.env.PORT}`);

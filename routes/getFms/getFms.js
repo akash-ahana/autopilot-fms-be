@@ -45,7 +45,8 @@ getFms.post('/findSingleFms' , async (req, res) => {
         const collection = db.collection('fmsMaster');
 
         // Fething data into from the  collection
-        const query = { fmsName: req.body.fmsName };
+        //const query = { fmsName: req.body.fmsName };
+        const query = { fmsMasterId : req.body.fmsMasterId };
         const document = await collection.findOne(query);
 
         console.log(document)

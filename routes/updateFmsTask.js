@@ -259,9 +259,6 @@ async function updateTask(companyUrl , taskId, formStepsAnswers,fmsTaskQualityDe
     // Filter document to find the document to update
     const filter = { fmsTaskId: taskId };
 
-    //Update document with new values
-    //const update = { $set: { fmsTaskStatus: "COMPLETED" } };
-
     const update = {
         $set: {
             fmsTaskStatus: "COMPLETED",

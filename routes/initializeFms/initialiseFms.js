@@ -148,7 +148,8 @@ initialiseFms.post('/addFmsUserAccess' , async (req, res) => {
                 const db = client.db(companyUrl);
                 const collection = db.collection('fmsMaster');
 
-                const filter = { fmsName : req.body.fmsName };
+                //const filter = { fmsName : req.body.fmsName };
+                const filter = { fmsMasterId : req.body.fmsMasterId };
                 const update = { $set: { fmsAccess : req.body.fmsUsers } };
                 const options = { upsert: true };
                 
@@ -223,7 +224,8 @@ initialiseFms.post('/createFmsQuestionare' , async (req, res) => {
         const db = client.db(companyUrl);
         const collection = db.collection('fmsMaster');
 
-        const filter = { fmsName : req.body.fmsName };
+        //const filter = { fmsName : req.body.fmsName };
+        const filter = { fmsMasterId : req.body.fmsMasterId };
         const update = { $set: { fmsQuestionare : req.body.fmsQuestionare } };
         const options = { upsert: true };
     
@@ -298,7 +300,8 @@ initialiseFms.post('/createFmsSteps' , async (req, res) => {
         const db = client.db(companyUrl);
         const collection = db.collection('fmsMaster');
 
-        const filter = { fmsName : req.body.fmsName };
+        //const filter = { fmsName : req.body.fmsName };
+        const filter = { fmsMasterId : req.body.fmsMasterId };
     const update = { $set: { fmsSteps : req.body.fmsSteps , isWhatsAppEnabled: req.body.isWhatsAppEnabled, whatsappData: req.body.whatsappData } };
     const options = { upsert: true };
     
@@ -317,6 +320,18 @@ initialiseFms.post('/createFmsSteps' , async (req, res) => {
         "message" : `${req.body.fmsName} FMS Steps is Successfully Added`,
         "status" : 200
     })
+
+
+
+    // try {
+    //     const sendWhatsapp = await axios.post(process.env.MAIN_BE_WHATSAPP_URL, {
+    //     verify_company_url: companyUrl,
+    //     fmsSteps: req.body.fmsSteps
+    //     });
+    //     console.log('WhatsApp message sent', sendWhatsapp.data);
+    // } catch (whatsappError) {
+    //     console.error('Error sending WhatsApp message:', whatsappError);
+    // }
 
     // Close the MongoDB connection
     await client.close();
@@ -373,7 +388,8 @@ initialiseFms.post('/makeFmsLive' , async (req, res) => {
         const db = client.db(companyUrl);
         const collection = db.collection('fmsMaster');
 
-        const filter = { fmsName : req.body.fmsName };
+        //const filter = { fmsName : req.body.fmsName };
+        const filter = { fmsMasterId : req.body.fmsMasterId };
     const update = { $set: { fmsLive : req.body.fmsLive } };   //fmsLive means that fms is active
     const options = { upsert: true };
     

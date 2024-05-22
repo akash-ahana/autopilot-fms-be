@@ -313,7 +313,7 @@ async function updateTaskStatus(companyUrl ,fmsTaskId, formStepsAnswers,fmsTaskQ
                     },
                     $currentDate: {
                           at: true
-                        }
+                        },
                   }
                 { returnOriginal: false }
             );

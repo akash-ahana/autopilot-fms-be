@@ -306,15 +306,15 @@ async function updateTaskStatus(companyUrl ,fmsTaskId, formStepsAnswers,fmsTaskQ
             const task = await collection.findOneAndUpdate(
                 { fmsTaskId: taskId },
                {
-                    $set: {
-                      fmsTaskStatus: "COMPLETED",
-                      formStepsAnswers: formStepsAnswers,
-                      fmsTaskQualityDetails: fmsTaskQualityDetails
-                    },
-                    $currentDate: {
-                          at: true
+                   $set: {
+                          fmsTaskStatus: "COMPLETED",
+                          formStepsAnswers: formStepsAnswers,
+                          fmsTaskQualityDetails: fmsTaskQualityDetails
                         },
-                  }
+                        $currentDate: {
+                          at: true
+                        }
+                  },
                 { returnOriginal: false }
             );
 

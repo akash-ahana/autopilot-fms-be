@@ -171,7 +171,7 @@ updateFmsTask.post('/updateFmsTask' , async (req, res) => {
                 const result = await collection.insertOne({
                     fmsTaskId,
                     fmsQAId : req.body.fmsQAId,
-                    fmsMasterId : req.body.fmsMasterID,
+                    fmsMasterId : req.body.fmsMasterId,
                     fmsName: req.body.fmsName,
                     fmsQA: req.body.fmsQA,
                     formStepsQustions : req.body.formStepsQustions,

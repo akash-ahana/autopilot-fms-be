@@ -171,7 +171,7 @@ updateFmsTask.post('/updateFmsTask' , async (req, res) => {
                 const result = await collection.insertOne({
                     fmsTaskId,
                     fmsQAId : req.body.fmsQAId,
-                    fmsMasterId : req.body.fmsMasterID,
+                    fmsMasterId : req.body.fmsMasterId,
                     fmsName: req.body.fmsName,
                     fmsQA: req.body.fmsQA,
                     formStepsQustions : req.body.formStepsQustions,
@@ -305,11 +305,16 @@ async function updateTaskStatus(companyUrl ,fmsTaskId, formStepsAnswers,fmsTaskQ
             console.log('TASK THAT IS GETTING UPDATED IS (RECURSIVE FUNCTION)' , taskId)
             const task = await collection.findOneAndUpdate(
                 { fmsTaskId: taskId },
-                {  $set: {
-                    fmsTaskStatus: "COMPLETED",
-                    formStepsAnswers: formStepsAnswers,
-                    fmsTaskQualityDetails : fmsTaskQualityDetails
-                }, },
+               {
+                   $set: {
+                          fmsTaskStatus: "COMPLETED",
+                          formStepsAnswers: formStepsAnswers,
+                          fmsTaskQualityDetails: fmsTaskQualityDetails
+                        },
+                        $currentDate: {
+                          at: true
+                        }
+                  },
                 { returnOriginal: false }
             );
 

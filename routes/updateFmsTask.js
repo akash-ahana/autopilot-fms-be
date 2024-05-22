@@ -312,8 +312,8 @@ async function updateTaskStatus(companyUrl ,fmsTaskId, formStepsAnswers,fmsTaskQ
                       fmsTaskQualityDetails: fmsTaskQualityDetails
                     },
                     $currentDate: {
-                      currentTime: true
-                    }
+                          at: true
+                        }
                   }
                 { returnOriginal: false }
             );

@@ -1,6 +1,7 @@
 const express = require("express");
 const updateFmsTask = express.Router();
-var MongoClient = require('mongodb').MongoClient;
+//var MongoClient = require('mongodb').MongoClient;
+const { MongoClient, ObjectId } = require('mongodb');
 const axios = require('axios');
 const { CurrentIST } = require('../helpers/convertGMTtoIST');
 const { Console } = require("winston/lib/winston/transports");
@@ -13,7 +14,7 @@ updateFmsTask.post('/updateFmsTask' , async (req, res) => {
     console.log("inside UPDATE FMS TASK -----------------------------------------------------------")
     console.log("inside UPDATE FMS TASK -----------------------------------------------------------")
     console.log("inside UPDATE FMS TASK -----------------------------------------------------------")
-    console.log(req.body)
+    console.log('REQUEST BODY' , req.body)
     
 
     // Initialize variables to hold user details
@@ -47,12 +48,17 @@ updateFmsTask.post('/updateFmsTask' , async (req, res) => {
     }
 
     //console.log('FETCHED DETAILS FROM BEARER TOKEN')
+    await updateTaskStatus(companyUrl , req.body.fmsTaskId, req.body.formStepsAnswers, req.body.fmsTaskQualityDetails);
+
+    //GETTING THE TASK THAT NEEDS TO BE UPDATED
+    //let taskToBeUpdated = getTaskToBeUpdated(companyUrl, req.body.fmsTaskId);
+    //console.log("taskToBeUpdated" , taskToBeUpdated)
    
 
    
-    console.log('Updating The Task')
-    updateTask(companyUrl , req.body.fmsTaskId, req.body.formStepsAnswers, req.body.fmsTaskQualityDetails)
-    console.log('Updated The Task')
+    //console.log('Updating The Task')
+    //updateTask(companyUrl , req.body.fmsTaskId, req.body.formStepsAnswers, req.body.fmsTaskQualityDetails)
+    //console.log('Updated The Task')
 
     console.log('fetching info to create next task')
 
@@ -97,9 +103,9 @@ updateFmsTask.post('/updateFmsTask' , async (req, res) => {
         return;
         }
 
-        console.log('stepid IS ' , req.body.stepId)
+        console.log('stepId IS ' , req.body.stepId)
         console.log('no of steps in that fms' , document.fmsSteps.length)
-        if(document.fmsSteps.length <  req.body.stepId) {
+        if(req.body.stepId <   document.fmsSteps.length) {
             shouldcreateNextTask = true
             timeHrs = document.fmsSteps[req.body.stepId].plannedDate.duration
             console.log('timeHrs' , timeHrs )
@@ -247,46 +253,127 @@ updateFmsTask.post('/updateFmsTask' , async (req, res) => {
 });
 })
 
-async function updateTask(companyUrl , taskId, formStepsAnswers,fmsTaskQualityDetails) {
-    //try block to update the task
-    try {
-    // Connect to MongoDB and perform operations
+// async function updateTask(companyUrl , taskId, formStepsAnswers,fmsTaskQualityDetails) {
+//     //try block to update the task
+//     try {
+//     // Connect to MongoDB and perform operations
+//     const client = await MongoClient.connect(process.env.MONGO_DB_STRING);
+//     console.log('Connected to database');
+//     const db = client.db(companyUrl);
+//     const collection = db.collection('fmsTasks');
+
+//     // Filter document to find the document to update
+//     const filter = { fmsTaskId: taskId };
+
+//     const update = {
+//         $set: {
+//             fmsTaskStatus: "COMPLETED",
+//             formStepsAnswers: formStepsAnswers,
+//             fmsTaskQualityDetails : fmsTaskQualityDetails
+//         },
+//         $currentDate: { currentTime: true }
+//         };
+    
+
+//     //Perform the update operation
+//     const result = await collection.updateOne(filter, update);
+
+//      console.log('update task result' , result);
+    
+
+//     // Close the MongoDB connection
+//     await client.close();
+//     console.log('MongoDB connection closed');
+
+//     } catch (error) {
+//     console.error('Error posting data:', error);
+//     res.status(500).send({ message: 'Error Submitting QA', status: 500 });
+//     return;
+//     }
+//     console.log('updated the task')
+// }
+
+// async function getTaskToBeUpdated(companyUrl , taskId) {
+//     let taskToBeUpdated;
+//      try {
+//         // Connect to MongoDB and perform operations
+//         const client = await MongoClient.connect(process.env.MONGO_DB_STRING);
+//         console.log('Connected to database to get overDueTasksForPc');
+//         const db = client.db(companyUrl);
+//         const collection = db.collection('fmsTasks');
+
+//         // Query to find documents with processCoordinatorId of 1
+//         const query = { fmsTaskId: taskId };
+          
+//         taskToBeUpdated = await collection.find(query).toArray();
+
+        
+
+//         //console.log('taskToBeUpdated' , taskToBeUpdated);
+       
+//         // Close the MongoDB connection
+//         await client.close();
+//         console.log('MongoDB connection closed');
+//         return taskToBeUpdated
+//     } 
+//     catch (error) {
+//         console.error('Error Connecting to MongoDB', error);
+//         res.status(500).send({ message: `${taskId}  Task ID NOT found`, status: 500 });
+//     }
+// }
+
+async function updateTaskStatus(companyUrl ,fmsTaskId, formStepsAnswers,fmsTaskQualityDetails) {
+    console.log('INSIDE THE FUNCTION TO UPDATE THE TASK STATUS TO COMPLETED')
+    const dbName = companyUrl; // replace with your database name
     const client = await MongoClient.connect(process.env.MONGO_DB_STRING);
-    console.log('Connected to database');
-    const db = client.db(companyUrl);
-    const collection = db.collection('fmsTasks');
 
-    // Filter document to find the document to update
-    const filter = { fmsTaskId: taskId };
+    try {
+        await client.connect();
+        const db = client.db(dbName);
+        const collection = db.collection('fmsTasks'); // replace with your collection name
 
-    const update = {
-        $set: {
-            fmsTaskStatus: "COMPLETED",
-            formStepsAnswers: formStepsAnswers,
-            fmsTaskQualityDetails : fmsTaskQualityDetails
-        },
-        $currentDate: { currentTime: true }
-        };
-    
+        // Recursive function to update task and its transferred tasks
+        async function updateTaskRecursively(taskId) {
+            console.log('TASK THAT IS GETTING UPDATED IS (RECURSIVE FUNCTION)' , taskId)
+            const task = await collection.findOneAndUpdate(
+                { fmsTaskId: taskId },
+                {  $set: {
+                    fmsTaskStatus: "COMPLETED",
+                    formStepsAnswers: formStepsAnswers,
+                    fmsTaskQualityDetails : fmsTaskQualityDetails
+                }, },
+                { returnOriginal: false }
+            );
 
-    //Perform the update operation
-    const result = await collection.updateOne(filter, update);
+            if (!task.fmsTaskId) {
+                console.log(`Task with fmsTaskId ${taskId} not found`);
+                return;
+            }
 
-    // console.log(result);
-    
+            console.log('Task updated:', task.fmsTaskId);
 
-    // Close the MongoDB connection
-    await client.close();
-    console.log('MongoDB connection closed');
+            // Check if the task is transferred from another task
+            console.log('CHECKING IF THE TASK IS TRANSFERRD FROM SOME OTHER TASK')
+            console.log(task.isTransferredFrom , 'task.isTransferredFrom')
+            if (task.isTransferredFrom) {
+                console.log('YES THE TASK IS TRANSFERRED FROM SOME OTHER TASK'  ,task.isTransferredFrom)
+                const transferredFromTaskId = task.transferredFromTaskId;
+                console.log('transferredFromTaskId' ,  transferredFromTaskId)
+                // Recursively update the transferred task
+                await updateTaskRecursively(transferredFromTaskId);
+            }
+        }
+
+        // Start the recursive update with the initial task
+        await updateTaskRecursively(fmsTaskId);
 
     } catch (error) {
-    console.error('Error posting data:', error);
-    res.status(500).send({ message: 'Error Submitting QA', status: 500 });
-    return;
+        console.error('Error:', error);
+    } finally {
+        await client.close();
     }
-    console.log('updated the task')
 }
 
-//async function fetchDetailsofNextTask(companyUrl , req.body.fmsName ,  )
+
 
 module.exports = updateFmsTask;

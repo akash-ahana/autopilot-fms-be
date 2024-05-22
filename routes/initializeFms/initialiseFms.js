@@ -158,20 +158,28 @@ initialiseFms.post('/editFmsStep1', async (req, res) => {
 
  //const currentDate = moment().tz('Asia/Kolkata').format();
 
-      // Filter document to find the document to update
-    const filter = { fmsTaskId: taskId };
-
-    const update = {
+        // Update object
+        const update = {
           $set: {
               fmsName: req.body.fmsName,
               fmsDescription: req.body.fmsDescription,
-              processDetailsResponse : processDetailsResponse
-          },
-        };
-    
+              fmsProcessId: req.body.fmsProcessId
+          }
+      };
 
-    //Perform the update operation
-    const result = await collection.updateOne(filter, update);
+      // Find and update the document
+      const result = await collection.findOneAndUpdate(
+          { fmsMasterId: req.body.fmsMasterId },
+          update,
+          { returnOriginal: false } // returns the updated document
+      );
+
+      // if (!result.value) {
+      //     console.log(`Document with fmsMasterId ${req.body.fmsMasterId} not found`);
+      //     return;
+      // }
+
+      console.log('Document updated:', result.value);
 
       res.json({
           "message": `${req.body.fmsName} Step 1 is Successfully Edited`,

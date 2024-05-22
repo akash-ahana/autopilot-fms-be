@@ -137,6 +137,11 @@ app.use("/fmsPerformance", fmsTasksPerformance);
 const dbCreation = require("./routes/dbCreate");
 app.use("/dbCreate", dbCreation);
 
+//----------------------------------------------------------------------//
+const getfilterDoer = require("./routes/fmsFilter/getFilterDoer");
+app.use("/getfilterDoer", getfilterDoer);
+
+
 
 var server = app.listen(process.env.PORT, function () {
    console.log(`Express App running on PORT ${process.env.PORT}`);

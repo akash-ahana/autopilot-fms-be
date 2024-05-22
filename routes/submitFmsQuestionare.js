@@ -596,20 +596,20 @@ submitFmsQuestionare.post('/submitFmsUserQAcreateTaskStep1', async (req, res) =>
 
      ///sending android notification data
      console.log('sending android notification')
-        try {
-            const sendAndroidNotification = await axios.post(process.env.MAIN_ANDROID_NOTIFICATION, {
-            verify_company_url: companyUrl,
-            assigned_to: employee.employeeId,
-            user_id:userID,
-            fmsName:req.body.fmsName,
-            what:what,
-            fmsTaskCreatedTime:currentDate,
-            fmsTaskPlannedCompletionTime: plannedCompletionTime,
-            });
-            console.log('Android Notification sent', sendAndroidNotification.data);
-        } catch (androidError) {
-            console.error('Error sending WhatsApp message:', androidError);
-        }
+        // try {
+        //     const sendAndroidNotification = await axios.post(process.env.MAIN_ANDROID_NOTIFICATION, {
+        //     verify_company_url: companyUrl,
+        //     assigned_to: employee.employeeId,
+        //     user_id:userID,
+        //     fmsName:req.body.fmsName,
+        //     what:what,
+        //     fmsTaskCreatedTime:currentDate,
+        //     fmsTaskPlannedCompletionTime: plannedCompletionTime,
+        //     });
+        //     console.log('Android Notification sent', sendAndroidNotification.data);
+        // } catch (androidError) {
+        //     console.error('Error sending WhatsApp message:', androidError);
+        // }
 
 
 

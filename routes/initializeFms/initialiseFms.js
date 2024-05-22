@@ -388,7 +388,7 @@ initialiseFms.post('/createFmsSteps' , async (req, res) => {
 
         //const filter = { fmsName : req.body.fmsName };
         const filter = { fmsMasterId : req.body.fmsMasterId };
-    const update = { $set: { fmsSteps : req.body.fmsSteps , isWhatsAppEnabled: req.body.isWhatsAppEnabled, whatsappData: req.body.whatsappData } };
+    const update = { $set: { fmsSteps : req.body.fmsSteps  } };
     const options = { upsert: true };
     
     const result = await collection.updateOne(filter, update, options);

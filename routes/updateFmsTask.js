@@ -309,7 +309,9 @@ async function updateTaskStatus(companyUrl ,fmsTaskId, formStepsAnswers,fmsTaskQ
                     fmsTaskStatus: "COMPLETED",
                     formStepsAnswers: formStepsAnswers,
                     fmsTaskQualityDetails : fmsTaskQualityDetails
-                }, },
+                },
+                 $currentDate: { currentTime: true }
+                },
                 { returnOriginal: false }
             );
 

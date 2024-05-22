@@ -305,13 +305,16 @@ async function updateTaskStatus(companyUrl ,fmsTaskId, formStepsAnswers,fmsTaskQ
             console.log('TASK THAT IS GETTING UPDATED IS (RECURSIVE FUNCTION)' , taskId)
             const task = await collection.findOneAndUpdate(
                 { fmsTaskId: taskId },
-                {  $set: {
-                    fmsTaskStatus: "COMPLETED",
-                    formStepsAnswers: formStepsAnswers,
-                    fmsTaskQualityDetails : fmsTaskQualityDetails
-                },
-                 $currentDate: { currentTime: true }
-                },
+               {
+                    $set: {
+                      fmsTaskStatus: "COMPLETED",
+                      formStepsAnswers: formStepsAnswers,
+                      fmsTaskQualityDetails: fmsTaskQualityDetails
+                    },
+                    $currentDate: {
+                      currentTime: true
+                    }
+                  }
                 { returnOriginal: false }
             );
 

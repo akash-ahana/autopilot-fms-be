@@ -70,6 +70,11 @@ try {
     status: 200
   });
 
+  // const companStartindayWeek = await axios.post(process.env.MAIN_BE_STARTDAY_WEEK_URL,
+  //    { 
+  //     verify_company_url: companyUrl 
+  //   });
+  // console.log("companStartindayWeek", companStartindayWeek);
   // Close the MongoDB connection
   await client.close();
   console.log('MongoDB connection closed');

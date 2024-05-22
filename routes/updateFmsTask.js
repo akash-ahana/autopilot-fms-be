@@ -130,40 +130,7 @@ updateFmsTask.post('/updateFmsTask' , async (req, res) => {
         } else {
             shouldcreateNextTask = false
             console.log('this is the last step')
-            try {
-                const clientUpdate = await MongoClient.connect(process.env.MONGO_DB_STRING);
-                console.log('Connected to database');
-                const db = clientUpdate.db(companyUrl);
-   
-                // const masterCollection = db.collection('fmsMaster');
-                // await masterCollection.updateOne(
-                //     { fmsMasterId: req.body.fmsMasterID },
-                //     { $inc: { noOfLive: -1 } }
-                // );
 
-                const masterCollection = db.collection('fmsMaster');
-                const masterDocument = await masterCollection.findOne({ fmsName: req.body.fmsName });
-                console.log('recieved document' , masterDocument)
-                const newNoOfLive = masterDocument.noOfLive - 1;
-                await masterCollection.updateOne(
-                    { fmsMasterId: req.body.fmsMasterId },
-                    { $set: { noOfLive: newNoOfLive } }
-                );
-   
-                const fmsCollection = db.collection('fms');
-                await fmsCollection.updateOne(
-                    { fmsQAId: req.body.fmsQAId },
-                    { $set: { fmsQAisLive: false } }
-                );
-   
-                await clientUpdate.close();
-                console.log('MongoDB connection closed');
-   
-            } catch (error) {
-                console.error('Error updating final task details:', error);
-                res.status(500).send({ message: 'Error updating final task details', status: 500 });
-                return;
-            }
         }
         // Close the MongoDB connection
         await client.close();
@@ -180,6 +147,7 @@ updateFmsTask.post('/updateFmsTask' , async (req, res) => {
     // if(nextTask.stepType == "DOER") {
         //try catch block to create bext Task
         // create nex ttask only if it is not the last step in the FMS
+        console.log('Creating the next task if ' , shouldcreateNextTask)
         if(shouldcreateNextTask) {
             try {
 

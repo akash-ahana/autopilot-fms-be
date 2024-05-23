@@ -141,6 +141,14 @@ app.use("/dbCreate", dbCreation);
 const getfilterDoer = require("./routes/fmsFilter/getFilterDoer");
 app.use("/getfilterDoer", getfilterDoer);
 
+//----------------------------------------------------------------------//
+const getfilterAdmin = require("./routes/fmsFilter/getFilterAdmin");
+app.use("/getfilterAdmin", getfilterAdmin);
+
+//----------------------------------------------------------------------//
+const getfilterPC = require("./routes/fmsFilter/getFilterPc");
+app.use("/getfilterPC", getfilterPC);
+
 
 
 var server = app.listen(process.env.PORT, function () {

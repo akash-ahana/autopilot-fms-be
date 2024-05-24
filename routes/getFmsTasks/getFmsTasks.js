@@ -34,7 +34,7 @@ getFmsTasks.get('/findAllFmsTasksForUser' , async (req, res) => {
         userEmail = response.data.email_id;
     } catch (error) {
         console.error('Error posting data:', error);
-        res.status(500).send({ message: 'Error fetching user details', status: 500 });
+         res.status(500).send({ error: 'Error fetching user details', status: 500 });
         return;
     }
 
@@ -60,7 +60,7 @@ getFmsTasks.get('/findAllFmsTasksForUser' , async (req, res) => {
     } 
     catch (error) {
         console.error('Error Connecting to MongoDB', error);
-        res.status(500).send({ message: `Error Connecting to MongoDB`, status: 500 });
+         res.status(500).send({ error: `Error Connecting to MongoDB`, status: 500 });
     }
 })
 
@@ -95,7 +95,7 @@ getFmsTasks.get('/findAllFmsTasksForUserPendingOrOverdue' , async (req, res) => 
         userEmail = response.data.email_id;
     } catch (error) {
         console.error('Error posting data:', error);
-        res.status(500).send({ message: 'Error fetching user details', status: 500 });
+         res.status(500).send({ error: 'Error fetching user details', status: 500 });
         return;
     }
 
@@ -127,7 +127,7 @@ getFmsTasks.get('/findAllFmsTasksForUserPendingOrOverdue' , async (req, res) => 
     } 
     catch (error) {
         console.error('Error Connecting to MongoDB', error);
-        res.status(500).send({ message: `Error Connecting to MongoDB`, status: 500 });
+         res.status(500).send({ error: `Error Connecting to MongoDB`, status: 500 });
     }
 })
 
@@ -160,7 +160,7 @@ getFmsTasks.get('/findAllFmsOverDueTasks' , async (req, res) => {
         userEmail = response.data.email_id;
     } catch (error) {
         console.error('Error posting data:', error);
-        res.status(500).send({ message: 'Error fetching user details', status: 500 });
+         res.status(500).send({ error: 'Error fetching user details', status: 500 });
         return;
     }
 
@@ -186,7 +186,7 @@ getFmsTasks.get('/findAllFmsOverDueTasks' , async (req, res) => {
     } 
     catch (error) {
         console.error('Error Connecting to MongoDB', error);
-        res.status(500).send({ message: `${req.body.fmsName}  NOT found`, status: 500 });
+         res.status(500).send({ error: `${req.body.fmsName}  NOT found`, status: 500 });
     }
 })
 
@@ -219,7 +219,7 @@ getFmsTasks.get('/findAllFmsPendingTasks' , async (req, res) => {
         userEmail = response.data.email_id;
     } catch (error) {
         console.error('Error posting data:', error);
-        res.status(500).send({ message: 'Error fetching user details', status: 500 });
+         res.status(500).send({ error: 'Error fetching user details', status: 500 });
         return;
     }
 
@@ -245,7 +245,7 @@ getFmsTasks.get('/findAllFmsPendingTasks' , async (req, res) => {
     } 
     catch (error) {
         console.error('Error Connecting to MongoDB', error);
-        res.status(500).send({ message: `${req.body.fmsName}  NOT found`, status: 500 });
+         res.status(500).send({ error: `${req.body.fmsName}  NOT found`, status: 500 });
     }
 })
 
@@ -278,7 +278,7 @@ getFmsTasks.get('/findAllFmsOverdueTasksForUser' , async (req, res) => {
         userEmail = response.data.email_id;
     } catch (error) {
         console.error('Error posting data:', error);
-        res.status(500).send({ message: 'Error fetching user details', status: 500 });
+         res.status(500).send({ error: 'Error fetching user details', status: 500 });
         return;
     }
 
@@ -304,7 +304,7 @@ getFmsTasks.get('/findAllFmsOverdueTasksForUser' , async (req, res) => {
     } 
     catch (error) {
         console.error('Error Connecting to MongoDB', error);
-        res.status(500).send({ message: `${req.body.fmsName}  NOT found`, status: 500 });
+         res.status(500).send({ error: `${req.body.fmsName}  NOT found`, status: 500 });
     }
 })
 
@@ -337,7 +337,7 @@ getFmsTasks.get('/findAllFmsOverdueTasksForPc' , async (req, res) => {
         userEmail = response.data.email_id;
     } catch (error) {
         console.error('Error posting data:', error);
-        res.status(500).send({ message: 'Error fetching user details', status: 500 });
+         res.status(500).send({ error: 'Error fetching user details', status: 500 });
         return;
     }
 
@@ -371,7 +371,7 @@ getFmsTasks.get('/findAllFmsOverdueTasksForPc' , async (req, res) => {
     } 
     catch (error) {
         console.error('Error Connecting to MongoDB', error);
-        res.status(500).send({ message: `${req.body.fmsName}  NOT found`, status: 500 });
+         res.status(500).send({ error: `${req.body.fmsName}  NOT found`, status: 500 });
     }
 
     //////////////fetching all  tasks
@@ -402,7 +402,7 @@ getFmsTasks.get('/findAllFmsOverdueTasksForPc' , async (req, res) => {
     } 
     catch (error) {
         console.error('Error Connecting to MongoDB', error);
-        res.status(500).send({ message: `${req.body.fmsName}  NOT found`, status: 500 });
+         res.status(500).send({ error: `${req.body.fmsName}  NOT found`, status: 500 });
     }
 
     console.log(fmsMasterIds)

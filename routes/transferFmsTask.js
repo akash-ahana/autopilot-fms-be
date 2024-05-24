@@ -36,7 +36,7 @@ transferFmsTask.post("/transferFmsTask", async (req, res) => {
       userEmail = response.data.email_id;
   } catch (error) {
       //console.error('Error posting data:', error);
-      res.status(500).send({ message: 'Error fetching user details', status: 500 });
+       res.status(500).send({ error: "Error fetching user details", status: 500 });
       return;
   }
 
@@ -100,7 +100,7 @@ transferFmsTask.post("/transferFmsTask", async (req, res) => {
     //res.json({ message: "Task transferred successfully", status: 200 });
   } catch (error) {
     console.error("Error Connecting to MongoDB", error);
-    res.status(500).send({ message: "Error transferring task", status: 500 });
+     res.status(500).send({ error: "Error transferring task", status: 500 });
   }
 
   res.json({ message: "Task transferred successfully", status: 200 });

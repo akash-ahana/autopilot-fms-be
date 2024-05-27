@@ -702,10 +702,11 @@ submitFmsQuestionare.post('/submitFmsUserQAcreateTaskStep1', async (req, res) =>
     //-------------------------Triggr Whatsapp Messages---------------------------------------//
     console.log('trigger Whatsapp messages')
     console.log(fmsSteps)
+    const lastFmsStep = fmsSteps[fmsSteps.length - 1];
     try {
         const sendWhatsapp = await axios.post(process.env.MAIN_BE_WHATSAPP_URL, {
         verify_company_url: companyUrl,
-        fmsSteps: fmsSteps
+        fmsSteps: lastFmsStep
         });
         console.log('WhatsApp message sent', sendWhatsapp.data);
     } catch (whatsappError) {

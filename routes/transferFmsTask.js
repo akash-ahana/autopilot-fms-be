@@ -56,6 +56,7 @@ transferFmsTask.post("/transferFmsTask", async (req, res) => {
          fmsTaskId = lastDocument[0].fmsTaskId + 1;
      }
 
+     const currentDate = moment().tz('Asia/Kolkata').format();
      // Inserting data into the collection
      const result = await collection.insertOne({
       fmsTaskId,
@@ -73,7 +74,7 @@ transferFmsTask.post("/transferFmsTask", async (req, res) => {
       how: req.body.task.how,
       stepId : req.body.task.stepId,
       stepType : req.body.task.stepType,
-      //fmsTaskCreatedTime : CurrentIST(),
+      fmsTaskCreatedTime : currentDate,
       //fmsTaskPlannedCompletionTime : new Date(new Date().setHours(new Date().getHours() + Number(timeHrs.trim()))),
       fmsTaskCreatedTime : req.body.task.fmsTaskCreatedTime,
       fmsTaskPlannedCompletionTime : req.body.task.fmsTaskPlannedCompletionTime,

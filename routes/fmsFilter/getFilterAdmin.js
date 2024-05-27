@@ -38,23 +38,23 @@ getfilterAdmin.get('/getfilterAdmin', async (req, res) => {
     const db = client.db(companyUrl);
     const collection = db.collection("fmsTasks");
 
-    const { fmsTaskStatus, employeeId, processId, fmsTaskPlannedCompletionTime, week_number } = req.body;
+    const { status, employeeId, processId, select_date, week_no } = req.body;
 
     // Log the specific fields to debug
-    console.log("fmsTaskStatus:", fmsTaskStatus);
+    console.log("fmsTaskStatus:", status);
     console.log("employeeId:", employeeId);
 
     // Construct the query object dynamically based on the presence of fields
     const query = {};
 
-    if (fmsTaskStatus) query.fmsTaskStatus = fmsTaskStatus;
+    if (status) query.fmsTaskStatus = status;
     if (employeeId) query['fmsTaskDoer.employeeId'] = employeeId;
     if (processId) query['fmsProcessID.processId'] = processId;
 
-    if (fmsTaskPlannedCompletionTime) {
-      const startOfDay = new Date(fmsTaskPlannedCompletionTime);
+    if (select_date) {
+      const startOfDay = new Date(select_date);
       startOfDay.setUTCHours(0, 0, 0, 0);
-      const endOfDay = new Date(fmsTaskPlannedCompletionTime);
+      const endOfDay = new Date(select_date);
       endOfDay.setUTCHours(23, 59, 59, 999);
 
       query.fmsTaskPlannedCompletionTime = {
@@ -63,9 +63,9 @@ getfilterAdmin.get('/getfilterAdmin', async (req, res) => {
       };
     }
 
-    if (week_number) {
+    if (week_no) {
       try {
-        console.log("week_no input:", week_number);
+        console.log("week_no input:", week_no);
 
         // Fetch company starting day of the week
         const companyStartingDayWeekResponse = await axios.post(process.env.MAIN_BE_STARTDAY_WEEK_URL, {
@@ -76,7 +76,7 @@ getfilterAdmin.get('/getfilterAdmin', async (req, res) => {
         console.log(responseResults);
 
         // Find the object that matches the provided week_number
-        const matchingWeek = responseResults.find(week => week.weekNo === week_number);
+        const matchingWeek = responseResults.find(week => week.weekNo === week_no);
 
         if (matchingWeek) {
           const { weekStartingDate } = matchingWeek;

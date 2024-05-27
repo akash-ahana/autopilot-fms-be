@@ -36,7 +36,7 @@ getfilterPC.get('/getfilterPC', async (req, res) => {
     const processCoordinatorId = userID;
   
     // Extract query parameters from request body
-    const { fmsTaskStatus, employeeId, fmsTaskPlannedCompletionTime, week_number } = req.body;
+    const { status, employeeId, select_date, week_no } = req.body;
   
     try {
       // Connect to MongoDB
@@ -46,20 +46,20 @@ getfilterPC.get('/getfilterPC', async (req, res) => {
       const collection = db.collection("fmsTasks");
   
       // Log the specific fields to debug
-      console.log("fmsTaskStatus:", fmsTaskStatus);
+      console.log("fmsTaskStatus:", status);
       console.log("processCoordinatorId:", processCoordinatorId);
-      console.log("fmsTaskPlannedCompletionTime:", fmsTaskPlannedCompletionTime);
-      console.log("week_number:", week_number);
+      console.log("fmsTaskPlannedCompletionTime:", select_date);
+      console.log("week_number:", week_no);
   
       // Construct the query object dynamically based on the presence of fields
       const query = {};
-      if (fmsTaskStatus) query.fmsTaskStatus = fmsTaskStatus;
+      if (status) query.fmsTaskStatus = status;
       if (processCoordinatorId) query['fmsProcessID.processCoordinatorId'] = processCoordinatorId;
       if (employeeId) query['fmsTaskDoer.employeeId'] = employeeId;
-      if (fmsTaskPlannedCompletionTime) {
-        const startOfDay = new Date(fmsTaskPlannedCompletionTime);
+      if (select_date) {
+        const startOfDay = new Date(select_date);
         startOfDay.setUTCHours(0, 0, 0, 0);
-        const endOfDay = new Date(fmsTaskPlannedCompletionTime);
+        const endOfDay = new Date(select_date);
         endOfDay.setUTCHours(23, 59, 59, 999);
   
         query.fmsTaskPlannedCompletionTime = {
@@ -68,9 +68,9 @@ getfilterPC.get('/getfilterPC', async (req, res) => {
         };
       }
   
-      if (week_number) {
+      if (week_no) {
         try {
-          console.log("week_no input:", week_number);
+          console.log("week_no input:", week_no);
   
           // Fetch company starting day of the week
           const companyStartingDayWeekResponse = await axios.post(process.env.MAIN_BE_STARTDAY_WEEK_URL, {
@@ -81,7 +81,7 @@ getfilterPC.get('/getfilterPC', async (req, res) => {
           console.log(responseResults);
   
           // Find the object that matches the provided week_number
-          const matchingWeek = responseResults.find(week => week.weekNo === week_number);
+          const matchingWeek = responseResults.find(week => week.weekNo === week_no);
   
           if (matchingWeek) {
             const { weekStartingDate } = matchingWeek;

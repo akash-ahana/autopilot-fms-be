@@ -364,15 +364,27 @@ submitFmsQuestionare.post('/submitFmsUserQAcreateTaskStep1', async (req, res) =>
 
 
                             return plannedCompletionTimeIST;
-                        } else {
-                            return 0;
+                        } else if(plannedCompletionTime < shiftEndTime) {
+                            console.log("plannedTimeDate check here",plannedCompletionTime);
+                            plannedCompletionTimeIST = plannedCompletionTime;
+                            plannedCompletionTimeIST = moment(plannedCompletionTimeIST).tz('Asia/Kolkata');
+                            plannedCompletionTimeIST = plannedCompletionTimeIST.subtract(5, 'hours').subtract(30, 'minutes').format();
+                            console.log("plannedComplotiontimeIST check here" , plannedCompletionTimeIST);
+                            return plannedCompletionTimeIST;
                         }
                     }
 
                     let balanceTime = calculateBalanceHours(plannedTimeDate, shiftEndTimeDate);
                     console.log('Balance time:', balanceTime);
 
-                    plannedCompletionTimeIST = await validateHolidayforHRS(plannedCompletionTimeIST);
+
+                    if (plannedTimeDate > shiftEndTime) {
+                        // Perform holiday validation only if planned completion time exceeds shift end time
+                        plannedCompletionTimeIST = await validateHolidayforHRS(plannedCompletionTimeIST);
+                        console.log('Planned completion time after holiday validation:', plannedCompletionTimeIST);
+                    }
+
+                    // plannedCompletionTimeIST = await validateHolidayforHRS(plannedCompletionTimeIST);
 
                     // Here you can handle the case when balanceTime is not 0, if needed
 
@@ -536,14 +548,14 @@ submitFmsQuestionare.post('/submitFmsUserQAcreateTaskStep1', async (req, res) =>
                 const responseHoliday = await axios.post(process.env.MAIN_BE_HOLIDAY_NONWORKINGDAY_URL, { verify_company_url: companyUrl });//output like this  -> responseHoliday = ['2024-01-07', '2024-01-14']
                 
                 
-                const datesArrayAsObjects1 = responseHoliday.data.map(dateString => new Date(dateString));
+                // const datesArrayAsObjects1 = responseHoliday.data.map(dateString => new Date(dateString));
                 
-                // const datesArrayAsObjects1 = responseHoliday.data.map(dateString => {
-                //     let utcDate = new Date(dateString);
-                //     utcDate.setDate(utcDate.getDate() + 1); // Add one day
-                //     let istDate = moment(utcDate).tz('Asia/Kolkata').toDate(); // Convert to IST
-                //     return istDate;
-                // });
+                const datesArrayAsObjects1 = responseHoliday.data.map(dateString => {
+                    let utcDate = new Date(dateString);
+                    utcDate.setDate(utcDate.getDate() + 1); // Add one day
+                    let istDate = moment(utcDate).tz('Asia/Kolkata').toDate(); // Convert to IST
+                    return istDate;
+                });
                 
                 //console.log('responseHoliday.data', responseHoliday.data)        //output like this  -> responseHoliday.data = [2024-01-07T00:00:00.000Z, 2024-01-14T00:00:00.000Z]
 
@@ -570,9 +582,9 @@ submitFmsQuestionare.post('/submitFmsUserQAcreateTaskStep1', async (req, res) =>
                 
                 console.log("datesArrayAsObjects1", datesArrayAsObjects1);
                 const consecutiveArrays = groupConsecutiveDates(datesArrayAsObjects1);
-                              //console.log("consecutiveArrays" , consecutiveArrays)
-
-                              console.log("consecutive", consecutiveArrays);
+                
+                //console.log("consecutiveArrays" , consecutiveArrays)
+                console.log("consecutive", consecutiveArrays);
 
                 //const inputDate = new Date("2024-05-18");
                 const inputDate = new Date(inputDateString.trim());

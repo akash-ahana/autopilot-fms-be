@@ -166,7 +166,8 @@ updateFmsTask.post('/updateFmsTask' , async (req, res) => {
                 if (lastDocument.length > 0) {
                     fmsTaskId = lastDocument[0].fmsTaskId + 1;
                 }
-        
+                
+                const currentDate = moment().tz('Asia/Kolkata').format();
                 // Inserting data into the collection
                 const result = await collection.insertOne({
                     fmsTaskId,
@@ -184,7 +185,7 @@ updateFmsTask.post('/updateFmsTask' , async (req, res) => {
                     how: how,
                     stepId : stepId,
                     stepType : stepType,
-                    fmsTaskCreatedTime : CurrentIST(),
+                    fmsTaskCreatedTime : currentDate,
                     fmsTaskPlannedCompletionTime : new Date(new Date().setHours(new Date().getHours() + Number(timeHrs.trim()))),
                     formStepsAnswers: null,
                     fmsTaskQualityDetails : null,
@@ -221,75 +222,8 @@ updateFmsTask.post('/updateFmsTask' , async (req, res) => {
 });
 })
 
-// async function updateTask(companyUrl , taskId, formStepsAnswers,fmsTaskQualityDetails) {
-//     //try block to update the task
-//     try {
-//     // Connect to MongoDB and perform operations
-//     const client = await MongoClient.connect(process.env.MONGO_DB_STRING);
-//     console.log('Connected to database');
-//     const db = client.db(companyUrl);
-//     const collection = db.collection('fmsTasks');
 
-//     // Filter document to find the document to update
-//     const filter = { fmsTaskId: taskId };
-
-//     const update = {
-//         $set: {
-//             fmsTaskStatus: "COMPLETED",
-//             formStepsAnswers: formStepsAnswers,
-//             fmsTaskQualityDetails : fmsTaskQualityDetails
-//         },
-//         $currentDate: { currentTime: true }
-//         };
-    
-
-//     //Perform the update operation
-//     const result = await collection.updateOne(filter, update);
-
-//      console.log('update task result' , result);
-    
-
-//     // Close the MongoDB connection
-//     await client.close();
-//     console.log('MongoDB connection closed');
-
-//     } catch (error) {
-//     console.error('Error posting data:', error);
-//     res.status(500).send({ message: 'Error Submitting QA', status: 500 });
-//     return;
-//     }
-//     console.log('updated the task')
-// }
-
-// async function getTaskToBeUpdated(companyUrl , taskId) {
-//     let taskToBeUpdated;
-//      try {
-//         // Connect to MongoDB and perform operations
-//         const client = await MongoClient.connect(process.env.MONGO_DB_STRING);
-//         console.log('Connected to database to get overDueTasksForPc');
-//         const db = client.db(companyUrl);
-//         const collection = db.collection('fmsTasks');
-
-//         // Query to find documents with processCoordinatorId of 1
-//         const query = { fmsTaskId: taskId };
-          
-//         taskToBeUpdated = await collection.find(query).toArray();
-
-        
-
-//         //console.log('taskToBeUpdated' , taskToBeUpdated);
-       
-//         // Close the MongoDB connection
-//         await client.close();
-//         console.log('MongoDB connection closed');
-//         return taskToBeUpdated
-//     } 
-//     catch (error) {
-//         console.error('Error Connecting to MongoDB', error);
-//         res.status(500).send({ message: `${taskId}  Task ID NOT found`, status: 500 });
-//     }
-// }
-
+//This is a recursive function to update all the tasks to COMPLETED status (by validating if the task is transferred or not , if transferred update the transferred from tasks as well)
 async function updateTaskStatus(companyUrl ,fmsTaskId, formStepsAnswers,fmsTaskQualityDetails) {
     console.log('INSIDE THE FUNCTION TO UPDATE THE TASK STATUS TO COMPLETED')
     const dbName = companyUrl; // replace with your database name
@@ -324,6 +258,29 @@ async function updateTaskStatus(companyUrl ,fmsTaskId, formStepsAnswers,fmsTaskQ
             }
 
             console.log('Task updated:', task.fmsTaskId);
+
+            //-----------------------------yusuf 
+            const masterDocument = await collection.findOne({ fmsTaskId: taskId });
+            console.log('recieved document' , masterDocument.fmsTaskPlannedCompletionTime)
+           // const fmsTaskPlannedCompletionTime = task.value.fmsTaskPlannedCompletionTime;
+           const currentTimeIST = moment().tz('Asia/Kolkata').format();
+            console.log("Curent Time :",currentTimeIST);
+ 
+            if (currentTimeIST <= masterDocument.fmsTaskPlannedCompletionTime) {
+                await collection.updateOne(
+                    { fmsTaskId: taskId },
+                    { $set: { fmsTaskCompletedStatus: "ONTIME" } }
+                );
+                console.log(`Task ${taskId} completed ONTIME`);
+            }
+            else{
+                await collection.updateOne(
+                    { fmsTaskId: taskId },
+                    { $set: { fmsTaskCompletedStatus: "DELAY" } }
+                );
+                console.log(`Task ${taskId} completed DELAY`);
+            }
+            //----------------------------------yusuf  
 
             // Check if the task is transferred from another task
             console.log('CHECKING IF THE TASK IS TRANSFERRD FROM SOME OTHER TASK')

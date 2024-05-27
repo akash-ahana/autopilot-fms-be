@@ -258,6 +258,7 @@ submitFmsQuestionare.post('/submitFmsUserQAcreateTaskStep1', async (req, res) =>
 
     /////////////////////////////////////creating the task for the user in fmsTasks collection
     let plannedCompletionTime;
+    let plannedCompletionTimeIST
     try {
 
         //calculation of fmsTaskPlannedCompletionTime (start time - form submitted time, and tat in hrs or days)
@@ -279,13 +280,12 @@ submitFmsQuestionare.post('/submitFmsUserQAcreateTaskStep1', async (req, res) =>
         function getDateFromIso(isoString) {
             // Create a Date object from the ISO string
             let date = new Date(isoString);
-        
+
             // Reformat the date to only include the year, month, and day
             let formattedDate = date.toISOString().split('T')[0];
-        
+
             return formattedDate;
         }
-
         //Calculate Fms Planned Completion Time
       
         // async function handleTaskDurationAndLocation(durationType, working, duration, companyUrl) {
@@ -307,117 +307,96 @@ submitFmsQuestionare.post('/submitFmsUserQAcreateTaskStep1', async (req, res) =>
         //     }
         // }
 
-        if(durationType == "hrs") {
-            console.log('The Task is in hrs')
-            if(working == "OUTSIDE") {
-                console.log('OUTSIDE the Working hrs')
-                plannedCompletionTime = addHrs(CurrentIST() , duration);
-
-                //
-                //plannedCompletionTime = await validateHoliday(plannedCompletionTime)
-                //console.log('plannedCompletionTime days ' , plannedCompletionTime)
+        if (durationType == "hrs") {
+            if (working == "OUTSIDE") {
+                plannedCompletionTime = addHrs(CurrentIST(), duration);
+                plannedCompletionTimeIST = plannedCompletionTime;
             } else {
-                console.log('if time is during office hrs - INSIDE')
-                //working is inside office hrs
-                //fetch the workinghrs
-                const response = await axios.post(process.env.MAIN_BE_WORKING_SHIFT_URL, { verify_company_url: companyUrl });
+                try {
+                    const response = await axios.post(process.env.MAIN_BE_WORKING_SHIFT_URL, { verify_company_url: companyUrl });
+                    let shiftStartTimeStr = response.data.result[0].shiftStartTime;
+                    let shiftEndTimeStr = response.data.result[0].shiftEndTime;
 
-                console.log(response.data.result[0])  //RIGHT NOW ONLY ONE sHift
+                    let shiftStartTime = new Date(moment.tz(shiftStartTimeStr, 'Asia/Kolkata').format());
+                    let shiftEndTime = new Date(moment.tz(shiftEndTimeStr, 'Asia/Kolkata').format());
 
-                let shiftStartTime = response.data.result[0].shiftStartTime
-                let shiftEndTime = response.data.result[0].shiftEndTime
-                console.log('Start Shift Time ' ,  shiftStartTime)
-                console.log('End Shift Time ' ,  shiftEndTime)
+                    shiftStartTime.setHours(shiftStartTime.getHours() + 5);
+                    shiftStartTime.setMinutes(shiftStartTime.getMinutes() + 30);
 
-                let shiftStartTimeDateFormat = getCurrentDateInIST(shiftStartTime);
-                let shiftEndTimeDateFormat = getCurrentDateInIST(shiftEndTime);
+                    shiftEndTime.setHours(shiftEndTime.getHours() + 5);
+                    shiftEndTime.setMinutes(shiftEndTime.getMinutes() + 30);
 
-                console.log('Start Shift Time DateFormat' ,  shiftStartTimeDateFormat)
-                console.log('End Shift Time DateFormat' ,  shiftEndTimeDateFormat)
+                    const currentDateTimeFinalString = moment().tz('Asia/Kolkata').format();
+                    const currentDateTimeFinal = moment.tz(currentDateTimeFinalString, 'Asia/Kolkata').add(duration, 'hours').toDate();
+                    currentDateTimeFinal.setHours(currentDateTimeFinal.getHours() + 5);
+                    currentDateTimeFinal.setMinutes(currentDateTimeFinal.getMinutes() + 30);
 
-                plannedCompletionTime = addHrs(CurrentIST() , duration);
-                console.log('plannedCompletionTime' , plannedCompletionTime)
+                    console.log('Initial plannedCompletionTime:', currentDateTimeFinal);
 
-                // Parsing the strings into Date objects
-                const plannedTimeDate = new Date(plannedCompletionTime);
-                const shiftEndTimeDate = new Date(shiftEndTimeDateFormat);
+                    const plannedTimeDate = currentDateTimeFinal;
+                    const shiftEndTimeDate = new Date(shiftEndTime);
 
-                //function
-                function calculateBalanceHours(plannedCompletionTime, shiftEndTimeDateFormat) {
+                    function calculateBalanceHours(plannedCompletionTime, shiftEndTime) {
+                        if (plannedCompletionTime > shiftEndTime) {
+                            let diffMillis = plannedCompletionTime.getTime() - shiftEndTime.getTime();
+                            let hours = Math.floor(diffMillis / (1000 * 60 * 60));
+                            let minutes = Math.floor((diffMillis % (1000 * 60 * 60)) / (1000 * 60));
+                            let seconds = Math.floor(((diffMillis % (1000 * 60 * 60)) % (1000 * 60)) / 1000);
 
-                    // Parse the input times into Moment objects
-                    //let plannedCompletionMoment = moment(plannedCompletionTime, "HH:mm:ss");
-                    //let shiftEndMoment = moment(shiftEndTimeDateFormat, "HH:mm:ss");
-                    
-                
-                    // Check if plannedCompletionTime is greater than shiftEndTime
-                    if (plannedCompletionTime > shiftEndTimeDateFormat) {
-                        console.log('Planned Time is greater than shift end time')
-                        // Calculate the difference in hours
-                        //let diffHours = plannedCompletionTime.diff(shiftEndTimeDateFormat, 'hours', true);
-                
-                        // Return the positive difference in hours
-                        //return diffHours;
-                        // Calculate the difference in milliseconds
-                        console.log(typeof plannedCompletionTime);
-                        console.log(typeof shiftEndTimeDateFormat);
-                        let diffMillis = plannedCompletionTime.getTime() - shiftEndTimeDateFormat.getTime();
+                            let overflowforThatDayIs = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
 
-                        // Convert the difference from milliseconds to hours, minutes, and seconds
-                        let hours = Math.floor(diffMillis / (1000 * 60 * 60));
-                        let minutes = Math.floor((diffMillis % (1000 * 60 * 60)) / (1000 * 60));
-                        let seconds = Math.floor(((diffMillis % (1000 * 60 * 60)) % (1000 * 60)) / 1000);
+                            const nextDayStartTime = new Date(shiftStartTime);
+                          
+                            plannedCompletionTime.setHours(nextDayStartTime.getHours() + hours);
+                            plannedCompletionTime.setMinutes(nextDayStartTime.getMinutes() + minutes);
+                            plannedCompletionTime.setSeconds(nextDayStartTime.getSeconds() + seconds);
 
-                        // Return the difference in HH:mm:ss format
-                        let overflowforThatDayIs = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`
-                        console.log('extra time for next day' , overflowforThatDayIs)
+                            console.log('Final planned completion time (before adding offset):', plannedCompletionTime);
 
-                        //add the overflow to the nextDay
-                        //plannedCompletionTime = nxtDayShiftStartTime + overflowforThatDayIs
-                        console.log('typeof shiftStartTimeDateFormat')
-                        console.log(typeof shiftStartTimeDateFormat)
-                        console.log('shiftStartTimeDateFormat', shiftStartTimeDateFormat)
-                        const nextDayStartTime = new Date(shiftStartTimeDateFormat);
-                        //console.log('nextDayStartTime' , nextDayStartTime)
-                        // Add 5 hours and 30 minutes to the current time to convert it to IST
-                        nextDayStartTime.setHours(nextDayStartTime.getHours() + 5);
-                        nextDayStartTime.setMinutes(nextDayStartTime.getMinutes() + 30);
-                        console.log('nextDayStartTimeIST' , nextDayStartTime)
+                            plannedCompletionTime.setDate(plannedCompletionTime.getDate() + 1);
                         
-                        //this task has to go to next day 
-                        //plannedCompletionTime.setDays(nextDayStartTime.getHours() + hours)
-                        plannedCompletionTime.setHours(nextDayStartTime.getHours() + hours)
-                        plannedCompletionTime.setMinutes(nextDayStartTime.getMinutes() + minutes)
-                        plannedCompletionTime.setSeconds(nextDayStartTime.getSeconds() + seconds)
+                            plannedCompletionTimeIST = moment(plannedCompletionTime).tz('Asia/Kolkata');
 
-                        console.log('final planned completion time' , plannedCompletionTime)
-                        
-                        return overflowforThatDayIs;
-                    } else {
-                        // If plannedCompletionTime is not greater, return 0 or another appropriate value
-                        return 0;
+                            // Subtract 5 hours and 30 minutes from plannedCompletionTimeIST
+                            plannedCompletionTimeIST = plannedCompletionTimeIST.subtract(5, 'hours').subtract(30, 'minutes').format();
+
+                            console.log('Final planned completion time (IST - 05:30):', plannedCompletionTimeIST);
+
+
+                            return plannedCompletionTimeIST;
+                        } else {
+                            return 0;
+                        }
                     }
-                }
 
-                let balanceTime = calculateBalanceHours(plannedTimeDate, shiftEndTimeDate);
-                console.log('balance time' ,  balanceTime);
+                    let balanceTime = calculateBalanceHours(plannedTimeDate, shiftEndTimeDate);
+                    console.log('Balance time:', balanceTime);
+
+                    plannedCompletionTimeIST = await validateHolidayforHRS(plannedCompletionTimeIST);
+
+                    // Here you can handle the case when balanceTime is not 0, if needed
+
+                    plannedCompletionTime = plannedTimeDate;
+                } catch (error) {
+                    console.error('Error fetching working shift details:', error);
+                    res.status(500).send({ message: 'Error fetching working shift details', status: 500 });
+                    return;
+                }
             }
         } else {
-            console.log('The Task is in days')
-            plannedCompletionTime = addDays(CurrentIST() , duration);
-            console.log('plannedCompletionTime' , plannedCompletionTime)
-            console.log(typeof plannedCompletionTime)
-
-             plannedCompletionTime = await validateHoliday(plannedCompletionTime)
-             console.log('plannedCompletionTime days ' , plannedCompletionTime)
-            
+            plannedCompletionTime = addDays(CurrentIST(), duration);
+            console.log("plannedCompletionTiem for days", plannedCompletionTime);
+            plannedCompletionTime = await validateHoliday(plannedCompletionTime);
+            plannedCompletionTimeIST = plannedCompletionTime;
         }
+
+        console.log("Final Planned Completion Time:", plannedCompletionTimeIST);
 
        
         
-        async function validateHoliday(plannedCompletionTime) {
+        async function validateHolidayforHRS(plannedCompletionTime) {
             try {
-                console.log("inside get next working day, holiday validation input is " , plannedCompletionTime)
+                console.log("inside get next working day, holiday validation input is ", plannedCompletionTime)
                 console.log("plannedCompletionTime", typeof plannedCompletionTime)
 
                 // Split the string using "T" as the separator
@@ -425,15 +404,25 @@ submitFmsQuestionare.post('/submitFmsUserQAcreateTaskStep1', async (req, res) =>
                 let inputDateString = parts[0].trim();
                 let inputTimeString = parts[1].trim();
 
-                console.log("inputDateString" , inputDateString)
-                console.log("inputTimeString" , inputTimeString)
+                console.log("inputDateString", inputDateString)
+                console.log("inputTimeString", inputTimeString)
 
-                
+
                 // Fetching non-working days from the backend
                 const responseHoliday = await axios.post(process.env.MAIN_BE_HOLIDAY_NONWORKINGDAY_URL, { verify_company_url: companyUrl });//output like this  -> responseHoliday = ['2024-01-07', '2024-01-14']
-                const datesArrayAsObjects = responseHoliday.data.map(dateString => new Date(dateString)); 
+                
+                
+               // const datesArrayAsObjects1 = responseHoliday.data.map(dateString => new Date(dateString));
+                
+                const datesArrayAsObjects = responseHoliday.data.map(dateString => {
+                    let utcDate = new Date(dateString);
+                    utcDate.setDate(utcDate.getDate() + 1); // Add one day
+                    let istDate = moment(utcDate).tz('Asia/Kolkata').toDate(); // Convert to IST
+                    return istDate;
+                });
+                
                 //console.log('responseHoliday.data', responseHoliday.data)        //output like this  -> responseHoliday.data = [2024-01-07T00:00:00.000Z, 2024-01-14T00:00:00.000Z]
-            
+
                 // Function to group consecutive dates into arrays
                 function groupConsecutiveDates(dates) {
                     dates.sort((a, b) => a - b); // Sort the dates in ascending order
@@ -453,8 +442,13 @@ submitFmsQuestionare.post('/submitFmsUserQAcreateTaskStep1', async (req, res) =>
                     return result;
                 }
 
+                // console.log("datesArrayAsObjects", datesArrayAsObjects);
+                
+                console.log("datesArrayAsObjects1", datesArrayAsObjects);
                 const consecutiveArrays = groupConsecutiveDates(datesArrayAsObjects);
-                //console.log("consecutiveArrays" , consecutiveArrays)
+                              //console.log("consecutiveArrays" , consecutiveArrays)
+
+                              console.log("consecutive", consecutiveArrays);
 
                 //const inputDate = new Date("2024-05-18");
                 const inputDate = new Date(inputDateString.trim());
@@ -478,15 +472,16 @@ submitFmsQuestionare.post('/submitFmsUserQAcreateTaskStep1', async (req, res) =>
                     }
                 }
 
-                console.log('inputDate' , inputDate , belongsToElement , 'element ' , 'which is a holiday')
+                console.log('inputDate', inputDate, belongsToElement, 'element ', 'which is a holiday')
 
-                if(belongsToElement >= 0) {
+                if (belongsToElement >= 0) {
                     console.log("Input date belongs to element:", belongsToElement);
                     let dateBelongsTo = consecutiveArrays[belongsToElement]
 
+    
                     console.log(dateBelongsTo)
                     //next working date is 
-                    let lastElementinTheArray  = dateBelongsTo[dateBelongsTo.length-1]
+                    let lastElementinTheArray = dateBelongsTo[dateBelongsTo.length - 1]
                     console.log(lastElementinTheArray)
 
                     //next working date is 
@@ -494,23 +489,147 @@ submitFmsQuestionare.post('/submitFmsUserQAcreateTaskStep1', async (req, res) =>
                     let nextWorkingDay = new Date(lastElementinTheArray.getTime());
                     nextWorkingDay.setDate(nextWorkingDay.getDate() + 1);
                     let nextWorkingDayString = formatDateFromDateObjectToString(nextWorkingDay)
-                    console.log("nextWorkingDayString" , nextWorkingDayString)
-                    
+                    console.log("nextWorkingDayString", nextWorkingDayString)
 
-                     let finalNextWorkingDay = nextWorkingDayString+ "T" + inputTimeString;
-                     console.log("finalNextWorkingDay" , finalNextWorkingDay)
 
-                     //split to remove timeZone
+                    let finalNextWorkingDay = nextWorkingDayString + "T" + inputTimeString;
+                    console.log("finalNextWorkingDay", finalNextWorkingDay)
 
-                     var finalNextWorkingDaydateObject = new Date(finalNextWorkingDay);
+                    //split to remove timeZone
+
+                    var finalNextWorkingDaydateObject = new Date(finalNextWorkingDay);
                     console.log(finalNextWorkingDaydateObject);
 
-                    
+
                     // Convert the Date object to IST using Moment Timezone
                     var istfinalNextWorkingDaydateObject = moment.tz(finalNextWorkingDaydateObject, 'Asia/Kolkata');
                     // Format the IST date as needed
                     var formattedIstDate = istfinalNextWorkingDaydateObject.format();
-                    console.log("formattedIstDate" , formattedIstDate);
+                    console.log("formattedIstDate", formattedIstDate);
+
+                    return formattedIstDate;
+                } else {
+                    return plannedCompletionTime
+                }
+
+            } catch (error) {
+                console.error("Failed to fetch holidays:", error);
+                return null; // Return null or handle the error appropriately
+            }
+        }
+
+        async function validateHoliday(plannedCompletionTime) {
+            try {
+                console.log("inside get next working day, holiday validation input is ", plannedCompletionTime)
+                console.log("plannedCompletionTime", typeof plannedCompletionTime)
+
+                // Split the string using "T" as the separator
+                let parts = plannedCompletionTime.split("T");
+                let inputDateString = parts[0].trim();
+                let inputTimeString = parts[1].trim();
+
+                console.log("inputDateString", inputDateString)
+                console.log("inputTimeString", inputTimeString)
+
+
+                // Fetching non-working days from the backend
+                const responseHoliday = await axios.post(process.env.MAIN_BE_HOLIDAY_NONWORKINGDAY_URL, { verify_company_url: companyUrl });//output like this  -> responseHoliday = ['2024-01-07', '2024-01-14']
+                
+                
+                const datesArrayAsObjects1 = responseHoliday.data.map(dateString => new Date(dateString));
+                
+                // const datesArrayAsObjects1 = responseHoliday.data.map(dateString => {
+                //     let utcDate = new Date(dateString);
+                //     utcDate.setDate(utcDate.getDate() + 1); // Add one day
+                //     let istDate = moment(utcDate).tz('Asia/Kolkata').toDate(); // Convert to IST
+                //     return istDate;
+                // });
+                
+                //console.log('responseHoliday.data', responseHoliday.data)        //output like this  -> responseHoliday.data = [2024-01-07T00:00:00.000Z, 2024-01-14T00:00:00.000Z]
+
+                // Function to group consecutive dates into arrays
+                function groupConsecutiveDates(dates) {
+                    dates.sort((a, b) => a - b); // Sort the dates in ascending order
+                    const result = [];
+                    let tempArray = [dates[0]];
+
+                    for (let i = 1; i < dates.length; i++) {
+                        const diff = (dates[i] - dates[i - 1]) / (1000 * 60 * 60 * 24);
+                        if (diff === 1) {
+                            tempArray.push(dates[i]);
+                        } else {
+                            result.push(tempArray);
+                            tempArray = [dates[i]];
+                        }
+                    }
+                    result.push(tempArray);
+                    return result;
+                }
+
+                // console.log("datesArrayAsObjects", datesArrayAsObjects);
+                
+                console.log("datesArrayAsObjects1", datesArrayAsObjects1);
+                const consecutiveArrays = groupConsecutiveDates(datesArrayAsObjects1);
+                              //console.log("consecutiveArrays" , consecutiveArrays)
+
+                              console.log("consecutive", consecutiveArrays);
+
+                //const inputDate = new Date("2024-05-18");
+                const inputDate = new Date(inputDateString.trim());
+                // Function to check if a date falls within a given range of dates
+                function isDateInRange(date, startDate, endDate) {
+                    //console.log('checking if the inputdate is a holiday')
+                    console.log(date >= startDate && date <= endDate)
+                    return date >= startDate && date <= endDate;
+                }
+
+                let belongsToElement = -1; // Default value if the input date doesn't belong to any array
+
+                for (let i = 0; i < consecutiveArrays.length; i++) {
+                    const dateArray = consecutiveArrays[i];
+                    const startDate = dateArray[0];
+                    const endDate = dateArray[dateArray.length - 1];
+
+                    if (isDateInRange(inputDate, startDate, endDate)) {
+                        belongsToElement = i;
+                        break;
+                    }
+                }
+
+                console.log('inputDate', inputDate, belongsToElement, 'element ', 'which is a holiday')
+
+                if (belongsToElement >= 0) {
+                    console.log("Input date belongs to element:", belongsToElement);
+                    let dateBelongsTo = consecutiveArrays[belongsToElement]
+
+    
+                    console.log(dateBelongsTo)
+                    //next working date is 
+                    let lastElementinTheArray = dateBelongsTo[dateBelongsTo.length - 1]
+                    console.log(lastElementinTheArray)
+
+                    //next working date is 
+                    //let nextWorkingDay = new Date(lastElementinTheArray.setDate(lastElementinTheArray.getDate() + 1));
+                    let nextWorkingDay = new Date(lastElementinTheArray.getTime());
+                    nextWorkingDay.setDate(nextWorkingDay.getDate() + 1);
+                    let nextWorkingDayString = formatDateFromDateObjectToString(nextWorkingDay)
+                    console.log("nextWorkingDayString", nextWorkingDayString)
+
+
+                    let finalNextWorkingDay = nextWorkingDayString + "T" + inputTimeString;
+                    console.log("finalNextWorkingDay", finalNextWorkingDay)
+
+                    //split to remove timeZone
+
+                    var finalNextWorkingDaydateObject = new Date(finalNextWorkingDay);
+                    console.log(finalNextWorkingDaydateObject);
+
+
+                    // Convert the Date object to IST using Moment Timezone
+                    var istfinalNextWorkingDaydateObject = moment.tz(finalNextWorkingDaydateObject, 'Asia/Kolkata');
+                    // Format the IST date as needed
+                    var formattedIstDate = istfinalNextWorkingDaydateObject.format();
+                    console.log("formattedIstDate", formattedIstDate);
 
                     return formattedIstDate;
                 } else {
@@ -542,17 +661,16 @@ submitFmsQuestionare.post('/submitFmsUserQAcreateTaskStep1', async (req, res) =>
             stepId: stepId,
             stepType: stepType,
             fmsTaskCreatedTime: currentDate,
-            //fmsTaskPlannedCompletionTime : new Date(new Date().setHours(new Date().getHours() + Number(duration.trim()))),
-            fmsTaskPlannedCompletionTime: plannedCompletionTime,
-            //const plannedCompletionTimeIST = moment().add(Number(duration.trim()), 'hours').tz('Asia/Kolkata').toDate();
+            fmsTaskPlannedCompletionTime: plannedCompletionTimeIST,
             formStepsAnswers: null,
             fmsTaskQualityDetails: null,
             isTransferredFrom: false,    //is this task transferred FROM other Task
             isTranferredTo: false,       //is this task transferred TO other Task
-            transferredFromTaskId : null, 
-            transferredToTaskId : null,
+            transferredFromTaskId: null,
+            transferredToTaskId: null,
             isWhatsAppEnabled : isWhatsAppEnabled, 
-            whatsappData : whatsappData
+            whatsappData : whatsappData,
+            at : null
 
         });
 
@@ -580,6 +698,8 @@ submitFmsQuestionare.post('/submitFmsUserQAcreateTaskStep1', async (req, res) =>
         return;
     }
 
+
+    //-------------------------Triggr Whatsapp Messages---------------------------------------//
     console.log('trigger Whatsapp messages')
     console.log(fmsSteps)
     try {
@@ -594,6 +714,7 @@ submitFmsQuestionare.post('/submitFmsUserQAcreateTaskStep1', async (req, res) =>
 
     const currentDate = moment().tz('Asia/Kolkata').format();
 
+    //-------------------------Triggr Android Notification---------------------------------------//
      ///sending android notification data
      console.log('sending android notification')
         // try {

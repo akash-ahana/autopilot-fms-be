@@ -5,6 +5,7 @@ const { MongoClient, ObjectId } = require('mongodb');
 const axios = require('axios');
 const { CurrentIST } = require('../helpers/convertGMTtoIST');
 const { Console } = require("winston/lib/winston/transports");
+const moment = require('moment-timezone');
 
 //update fms tasks 
 //first it updates the task that is send 
@@ -237,17 +238,20 @@ async function updateTaskStatus(companyUrl ,fmsTaskId, formStepsAnswers,fmsTaskQ
         // Recursive function to update task and its transferred tasks
         async function updateTaskRecursively(taskId) {
             console.log('TASK THAT IS GETTING UPDATED IS (RECURSIVE FUNCTION)' , taskId)
+            const currentDate = moment().tz('Asia/Kolkata').format();
             const task = await collection.findOneAndUpdate(
                 { fmsTaskId: taskId },
                {
                    $set: {
                           fmsTaskStatus: "COMPLETED",
                           formStepsAnswers: formStepsAnswers,
-                          fmsTaskQualityDetails: fmsTaskQualityDetails
-                        },
-                        $currentDate: {
-                          at: true
+                          fmsTaskQualityDetails: fmsTaskQualityDetails,
+                          at : currentDate
                         }
+                        // ,
+                        // $currentDate: {
+                        //   at: true
+                        // }
                   },
                 { returnOriginal: false }
             );

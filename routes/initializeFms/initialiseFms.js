@@ -45,6 +45,24 @@ initialiseFms.post('/fmsStep1', async (req, res) => {
         const db = client.db(companyUrl);
         const collection = db.collection('fmsMaster');
 
+         // Convert req.body.fmsName to lowercase and remove spaces
+       const formattedFmsName = req.body.fmsName.toLowerCase().replace(/\s+/g, '');
+ 
+       // Check if fmsName already exists in the collection (case-insensitive, ignoring spaces)
+       const existingDocument = await collection.findOne({
+           $expr: {
+               $eq: [
+                   { $toLower: { $replaceAll: { input: "$fmsName", find: " ", replacement: "" } } },
+                   formattedFmsName
+               ]
+           }
+       });
+ 
+       if (existingDocument) {
+           await client.close();
+           return res.status(400).json({ error: "The FMS Title already exists", status: 400 });
+       }
+
         // Find the last inserted document and get its incremental value
         const lastDocument = await collection.find().sort({ _id: -1 }).limit(1).toArray();
         let fmsMasterId = 1;

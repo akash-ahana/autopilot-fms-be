@@ -36,7 +36,7 @@ getfilterDoer.get('/getfilterDoer', async (req, res) => {
   const employeeId = userID;
 
   // Extract query parameters from request body
-  const { status, processId, select_date, week_no } = req.body;
+  const { status, processId, select_date, week_no } = req.query;
 
   try {
     // Connect to MongoDB
@@ -56,7 +56,7 @@ getfilterDoer.get('/getfilterDoer', async (req, res) => {
     const query = {};
     if (status) query.fmsTaskStatus = status;
     if (employeeId) query['fmsTaskDoer.employeeId'] = employeeId;
-    if (processId) query['fmsProcessID.processId'] = processId;
+    if (processId) query['fmsProcessID.processId'] = parseInt(processId,10);
     if (select_date) {
       const startOfDay = new Date(select_date);
       startOfDay.setUTCHours(0, 0, 0, 0);

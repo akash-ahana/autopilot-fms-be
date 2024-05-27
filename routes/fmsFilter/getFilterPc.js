@@ -36,7 +36,7 @@ getfilterPC.get('/getfilterPC', async (req, res) => {
     const processCoordinatorId = userID;
   
     // Extract query parameters from request body
-    const { status, employeeId, select_date, week_no } = req.body;
+    const { status, employeeId, select_date, week_no } = req.query;
   
     try {
       // Connect to MongoDB
@@ -55,7 +55,7 @@ getfilterPC.get('/getfilterPC', async (req, res) => {
       const query = {};
       if (status) query.fmsTaskStatus = status;
       if (processCoordinatorId) query['fmsProcessID.processCoordinatorId'] = processCoordinatorId;
-      if (employeeId) query['fmsTaskDoer.employeeId'] = employeeId;
+      if (employeeId) query['fmsTaskDoer.employeeId'] = parseInt(employeeId,10);
       if (select_date) {
         const startOfDay = new Date(select_date);
         startOfDay.setUTCHours(0, 0, 0, 0);

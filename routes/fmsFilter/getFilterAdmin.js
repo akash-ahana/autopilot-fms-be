@@ -51,12 +51,10 @@ getfilterAdmin.get('/getfilterAdmin', async (req, res) => {
 
     if (status) query.fmsTaskStatus = status;
     if (employeeId) query['fmsTaskDoer.employeeId'] = parseInt(employeeId, 10);
-    if (processId) query['fmsProcessID.processId'] = parseInt(processId, 10);;
+    if (processId) query['fmsProcessID.processId'] = parseInt(processId, 10);
 
-    // Handle date filtering
-    if (select_date || week_no) {
-      query.fmsTaskPlannedCompletionTime = {};
-    }
+    // Construct date queries
+    const dateQuery = [];
 
     if (select_date) {
       const date = new Date(select_date);
@@ -66,8 +64,12 @@ getfilterAdmin.get('/getfilterAdmin', async (req, res) => {
         const endOfDay = new Date(date);
         endOfDay.setUTCHours(23, 59, 59, 999);
 
-        query.fmsTaskPlannedCompletionTime.$gte = startOfDay;
-        query.fmsTaskPlannedCompletionTime.$lt = endOfDay;
+        dateQuery.push({
+          fmsTaskPlannedCompletionTime: {
+            $gte: startOfDay,
+            $lt: endOfDay
+          }
+        });
 
         console.log("Date range for select_date query:", {
           $gte: startOfDay.toISOString(),
@@ -110,22 +112,17 @@ getfilterAdmin.get('/getfilterAdmin', async (req, res) => {
           endOfWeek.setDate(endOfWeek.getDate() + 6); // 7 days range
           endOfWeek.setUTCHours(23, 59, 59, 999);
 
-          // Check if `select_date` is also provided and combine the date ranges
-          if (query.fmsTaskPlannedCompletionTime.$gte) {
-            query.fmsTaskPlannedCompletionTime.$gte = new Date(Math.max(query.fmsTaskPlannedCompletionTime.$gte, startOfWeek));
-          } else {
-            query.fmsTaskPlannedCompletionTime.$gte = startOfWeek;
-          }
-
-          if (query.fmsTaskPlannedCompletionTime.$lt) {
-            query.fmsTaskPlannedCompletionTime.$lt = new Date(Math.min(query.fmsTaskPlannedCompletionTime.$lt, endOfWeek));
-          } else {
-            query.fmsTaskPlannedCompletionTime.$lt = endOfWeek;
-          }
+          // Construct the query with the date range
+          dateQuery.push({
+            fmsTaskPlannedCompletionTime: {
+              $gte: startOfWeek,
+              $lte: endOfWeek
+            }
+          });
 
           console.log("Date range for week_no query:", {
             $gte: startOfWeek.toISOString(),
-            $lt: endOfWeek.toISOString()
+            $lte: endOfWeek.toISOString()
           });
         } else {
           console.error("Error: Provided week_no doesn't match any fetched week_no");
@@ -135,6 +132,11 @@ getfilterAdmin.get('/getfilterAdmin', async (req, res) => {
         console.error("Error while fetching week details:", error);
         return res.status(500).json({ error: "Internal server error" });
       }
+    }
+
+    // Combine date queries if both are present
+    if (dateQuery.length > 0) {
+      query.$and = dateQuery;
     }
 
     // Log the final query before execution

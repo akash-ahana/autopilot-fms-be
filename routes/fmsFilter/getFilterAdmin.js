@@ -38,29 +38,45 @@ getfilterAdmin.get('/getfilterAdmin', async (req, res) => {
     const db = client.db(companyUrl);
     const collection = db.collection("fmsTasks");
 
-    const { status, employeeId, processId, select_date, week_no } = req.body;
+    const { status, employeeId, processId, select_date, week_no } = req.query;
 
     // Log the specific fields to debug
     console.log("fmsTaskStatus:", status);
     console.log("employeeId:", employeeId);
+    console.log("select_date:", select_date);
+    console.log("week_no:", week_no);
 
     // Construct the query object dynamically based on the presence of fields
     const query = {};
 
     if (status) query.fmsTaskStatus = status;
-    if (employeeId) query['fmsTaskDoer.employeeId'] = employeeId;
-    if (processId) query['fmsProcessID.processId'] = processId;
+    if (employeeId) query['fmsTaskDoer.employeeId'] = parseInt(employeeId, 10);
+    if (processId) query['fmsProcessID.processId'] = parseInt(processId, 10);;
+
+    // Handle date filtering
+    if (select_date || week_no) {
+      query.fmsTaskPlannedCompletionTime = {};
+    }
 
     if (select_date) {
-      const startOfDay = new Date(select_date);
-      startOfDay.setUTCHours(0, 0, 0, 0);
-      const endOfDay = new Date(select_date);
-      endOfDay.setUTCHours(23, 59, 59, 999);
+      const date = new Date(select_date);
+      if (!isNaN(date)) {
+        const startOfDay = new Date(date);
+        startOfDay.setUTCHours(0, 0, 0, 0);
+        const endOfDay = new Date(date);
+        endOfDay.setUTCHours(23, 59, 59, 999);
 
-      query.fmsTaskPlannedCompletionTime = {
-        $gte: startOfDay.toISOString(),
-        $lt: endOfDay.toISOString()
-      };
+        query.fmsTaskPlannedCompletionTime.$gte = startOfDay;
+        query.fmsTaskPlannedCompletionTime.$lt = endOfDay;
+
+        console.log("Date range for select_date query:", {
+          $gte: startOfDay.toISOString(),
+          $lt: endOfDay.toISOString()
+        });
+      } else {
+        console.error("Invalid select_date provided");
+        return res.status(400).json({ error: "Invalid select_date provided" });
+      }
     }
 
     if (week_no) {
@@ -73,10 +89,15 @@ getfilterAdmin.get('/getfilterAdmin', async (req, res) => {
         });
 
         const responseResults = companyStartingDayWeekResponse.data.result;
-        console.log(responseResults);
+        console.log("Response Results:", responseResults);
+
+        // Log all available week numbers to verify
+        responseResults.forEach(week => {
+          console.log("Available week_no:", week.weekNo);
+        });
 
         // Find the object that matches the provided week_number
-        const matchingWeek = responseResults.find(week => week.weekNo === week_no);
+        const matchingWeek = responseResults.find(week => week.weekNo === parseInt(week_no, 10));
 
         if (matchingWeek) {
           const { weekStartingDate } = matchingWeek;
@@ -86,16 +107,26 @@ getfilterAdmin.get('/getfilterAdmin', async (req, res) => {
           const startOfWeek = new Date(weekStartingDate);
           startOfWeek.setUTCHours(0, 0, 0, 0);
           const endOfWeek = new Date(startOfWeek);
-          endOfWeek.setDate(endOfWeek.getDate() + 7);
+          endOfWeek.setDate(endOfWeek.getDate() + 6); // 7 days range
           endOfWeek.setUTCHours(23, 59, 59, 999);
 
-          // Construct the query with the date range
-          query.fmsTaskPlannedCompletionTime = {
-            $gte: startOfWeek.toISOString(),
-            $lte: endOfWeek.toISOString()
-          };
+          // Check if `select_date` is also provided and combine the date ranges
+          if (query.fmsTaskPlannedCompletionTime.$gte) {
+            query.fmsTaskPlannedCompletionTime.$gte = new Date(Math.max(query.fmsTaskPlannedCompletionTime.$gte, startOfWeek));
+          } else {
+            query.fmsTaskPlannedCompletionTime.$gte = startOfWeek;
+          }
 
-          console.log("Query result:", query.fmsTaskPlannedCompletionTime);
+          if (query.fmsTaskPlannedCompletionTime.$lt) {
+            query.fmsTaskPlannedCompletionTime.$lt = new Date(Math.min(query.fmsTaskPlannedCompletionTime.$lt, endOfWeek));
+          } else {
+            query.fmsTaskPlannedCompletionTime.$lt = endOfWeek;
+          }
+
+          console.log("Date range for week_no query:", {
+            $gte: startOfWeek.toISOString(),
+            $lt: endOfWeek.toISOString()
+          });
         } else {
           console.error("Error: Provided week_no doesn't match any fetched week_no");
           return res.status(400).json({ error: "Invalid week_no provided" });
@@ -105,6 +136,9 @@ getfilterAdmin.get('/getfilterAdmin', async (req, res) => {
         return res.status(500).json({ error: "Internal server error" });
       }
     }
+
+    // Log the final query before execution
+    console.log("Final Query:", JSON.stringify(query, null, 2));
 
     // Execute the query
     const taskDocuments = await collection.find(query).toArray();

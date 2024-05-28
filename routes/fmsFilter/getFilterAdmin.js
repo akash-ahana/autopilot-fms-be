@@ -9,6 +9,7 @@ getfilterAdmin.get('/getfilterAdmin', async (req, res) => {
   let companyUrl = "";
   let userEmail = "";
 
+  // Check for authorization header
   const authHeader = req.headers.authorization;
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
     console.log("Error: Authorization header missing or malformed");
@@ -31,6 +32,9 @@ getfilterAdmin.get('/getfilterAdmin', async (req, res) => {
     return res.status(500).json({ message: "Error fetching user details", status: 500 });
   }
 
+  // Extract query parameters from request query
+  const { status, processId, employeeId, select_date, week_no } = req.query;
+
   try {
     // Connect to MongoDB
     const client = await MongoClient.connect(process.env.MONGO_DB_STRING, { useNewUrlParser: true, useUnifiedTopology: true });
@@ -38,52 +42,33 @@ getfilterAdmin.get('/getfilterAdmin', async (req, res) => {
     const db = client.db(companyUrl);
     const collection = db.collection("fmsTasks");
 
-    const { status, employeeId, processId, select_date, week_no } = req.query;
-
     // Log the specific fields to debug
     console.log("fmsTaskStatus:", status);
-    console.log("employeeId:", employeeId);
-    console.log("select_date:", select_date);
-    console.log("week_no:", week_no);
+    console.log("processId:", processId);
+    console.log("fmsTaskPlannedCompletionTime:", select_date);
+    console.log("week_number:", week_no);
 
     // Construct the query object dynamically based on the presence of fields
     const query = {};
-
     if (status) query.fmsTaskStatus = status;
-    if (employeeId) query['fmsTaskDoer.employeeId'] = parseInt(employeeId, 10);
     if (processId) query['fmsProcessID.processId'] = parseInt(processId, 10);
-
-    // Construct date queries
-    const dateQuery = [];
+    if (employeeId) query['fmsTaskDoer.employeeId'] = parseInt(employeeId, 10);
 
     if (select_date) {
-      const date = new Date(select_date);
-      if (!isNaN(date)) {
-        const startOfDay = new Date(date);
-        startOfDay.setUTCHours(0, 0, 0, 0);
-        const endOfDay = new Date(date);
-        endOfDay.setUTCHours(23, 59, 59, 999);
+      const startOfDay = new Date(select_date);
+      startOfDay.setUTCHours(0, 0, 0, 0);
+      const endOfDay = new Date(select_date);
+      endOfDay.setUTCHours(23, 59, 59, 999);
 
-        dateQuery.push({
-          fmsTaskPlannedCompletionTime: {
-            $gte: startOfDay,
-            $lt: endOfDay
-          }
-        });
-
-        console.log("Date range for select_date query:", {
-          $gte: startOfDay.toISOString(),
-          $lt: endOfDay.toISOString()
-        });
-      } else {
-        console.error("Invalid select_date provided");
-        return res.status(400).json({ error: "Invalid select_date provided" });
-      }
+      query.fmsTaskPlannedCompletionTime = {
+        $gte: startOfDay.toISOString(),
+        $lt: endOfDay.toISOString()
+      };
     }
 
     if (week_no) {
       try {
-        console.log("week_no input:", week_no);
+        console.log("Received week_no:", week_no);
 
         // Fetch company starting day of the week
         const companyStartingDayWeekResponse = await axios.post(process.env.MAIN_BE_STARTDAY_WEEK_URL, {
@@ -91,39 +76,32 @@ getfilterAdmin.get('/getfilterAdmin', async (req, res) => {
         });
 
         const responseResults = companyStartingDayWeekResponse.data.result;
-        console.log("Response Results:", responseResults);
-
-        // Log all available week numbers to verify
-        responseResults.forEach(week => {
-          console.log("Available week_no:", week.weekNo);
-        });
+        console.log("Company Starting Day Week Response Results:", responseResults);
 
         // Find the object that matches the provided week_number
         const matchingWeek = responseResults.find(week => week.weekNo === parseInt(week_no, 10));
 
         if (matchingWeek) {
-          const { weekStartingDate } = matchingWeek;
+          const { weekStartingDate, weekStartingDay, weekNo } = matchingWeek;
 
           console.log("Fetched Week Starting Date:", weekStartingDate);
+          console.log("Fetched Week Starting Day:", weekStartingDay);
+          console.log("Fetched Week Number:", weekNo);
+          console.log("Received Week Number:", week_no);
 
           const startOfWeek = new Date(weekStartingDate);
           startOfWeek.setUTCHours(0, 0, 0, 0);
           const endOfWeek = new Date(startOfWeek);
-          endOfWeek.setDate(endOfWeek.getDate() + 6); // 7 days range
+          endOfWeek.setDate(startOfWeek.getDate() + 6); // 6 days after the start date
           endOfWeek.setUTCHours(23, 59, 59, 999);
 
           // Construct the query with the date range
-          dateQuery.push({
-            fmsTaskPlannedCompletionTime: {
-              $gte: startOfWeek,
-              $lte: endOfWeek
-            }
-          });
-
-          console.log("Date range for week_no query:", {
+          query.fmsTaskPlannedCompletionTime = {
             $gte: startOfWeek.toISOString(),
             $lte: endOfWeek.toISOString()
-          });
+          };
+
+          console.log("Query result:", query.fmsTaskPlannedCompletionTime);
         } else {
           console.error("Error: Provided week_no doesn't match any fetched week_no");
           return res.status(400).json({ error: "Invalid week_no provided" });
@@ -134,19 +112,15 @@ getfilterAdmin.get('/getfilterAdmin', async (req, res) => {
       }
     }
 
-    // Combine date queries if both are present
-    if (dateQuery.length > 0) {
-      query.$and = dateQuery;
-    }
-
-    // Log the final query before execution
-    console.log("Final Query:", JSON.stringify(query, null, 2));
-
-    // Execute the query
     const taskDocuments = await collection.find(query).toArray();
+
     console.log("Task Documents:", taskDocuments);
 
-    res.status(200).json({ message: taskDocuments, status: 200 });
+    // Send the fetched documents as the response
+    res.status(200).json({
+      message: taskDocuments,
+      status: 200
+    });
 
     // Close the MongoDB connection
     await client.close();

@@ -215,19 +215,6 @@ updateFmsTask.post('/updateFmsTask' , async (req, res) => {
                 return;
             }
 
-              //-------------------------Triggr Whatsapp Messages---------------------------------------//
-                console.log('trigger Whatsapp messages')
-                console.log(fmsSteps)
-                // const lastFmsStep = fmsSteps[fmsSteps.length - 1];
-                try {
-                    const sendWhatsapp = await axios.post(process.env.MAIN_BE_WHATSAPP_URL, {
-                    verify_company_url: companyUrl,
-                    fmsSteps: fmsSteps
-                    });
-                    console.log('WhatsApp message sent', sendWhatsapp.data);
-                } catch (whatsappError) {
-                    console.error('Error sending WhatsApp message:', whatsappError);
-                }
         }
        
 

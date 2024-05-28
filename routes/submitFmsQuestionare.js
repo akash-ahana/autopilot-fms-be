@@ -713,18 +713,28 @@ submitFmsQuestionare.post('/submitFmsUserQAcreateTaskStep1', async (req, res) =>
 
     //-------------------------Triggr Whatsapp Messages---------------------------------------//
     console.log('trigger Whatsapp messages')
-    console.log(fmsSteps)
-    // const lastFmsStep = fmsSteps[fmsSteps.length - 1];
-    try {
-        const sendWhatsapp = await axios.post(process.env.MAIN_BE_WHATSAPP_URL, {
-        verify_company_url: companyUrl,
-        fmsSteps: fmsSteps
-        });
-        console.log('WhatsApp message sent', sendWhatsapp.data);
-    } catch (whatsappError) {
-        console.error('Error sending WhatsApp message:', whatsappError);
+       
+    if (Array.isArray(fmsSteps) && fmsSteps.length > 0) {
+        const lastFmsStep = fmsSteps[fmsSteps.length - 1];
+        const whatsappData = lastFmsStep.whatsappData; 
+    
+        console.log('Last fmsStep:', lastFmsStep);
+        console.log('WhatsApp data to send:', whatsappData);
+    
+        try {
+            const sendWhatsapp = await axios.post(process.env.MAIN_BE_WHATSAPP_URL, {
+                verify_company_url: companyUrl,
+                fmsSteps: lastFmsStep,
+                whatsappData: whatsappData // Include whatsappData if needed
+            });
+            console.log('WhatsApp message sent', sendWhatsapp.data);
+        } catch (whatsappError) {
+            console.error('Error sending WhatsApp message:', whatsappError);
+        }
+    } else {
+        console.error('fmsSteps is not an array or is empty');
     }
-
+    
     
 
     //-------------------------Triggr Android Notification---------------------------------------//

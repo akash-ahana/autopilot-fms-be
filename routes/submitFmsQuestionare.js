@@ -725,11 +725,12 @@ submitFmsQuestionare.post('/submitFmsUserQAcreateTaskStep1', async (req, res) =>
         console.error('Error sending WhatsApp message:', whatsappError);
     }
 
-    const currentDate = moment().tz('Asia/Kolkata').format();
+    
 
     //-------------------------Triggr Android Notification---------------------------------------//
      ///sending android notification data
      console.log('sending android notification')
+     const currentDate = moment().tz('Asia/Kolkata').format();
         // try {
         //     const sendAndroidNotification = await axios.post(process.env.MAIN_ANDROID_NOTIFICATION, {
         //     verify_company_url: companyUrl,

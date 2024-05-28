@@ -79,7 +79,8 @@ updateFmsTask.post('/updateFmsTask' , async (req, res) => {
     let isTransferredFrom;   
     let isTranferredTo;   
     let transferredFromTaskId;
-    let transferredToTaskId;   
+    let transferredToTaskId;
+    let fmsSteps;   
     try {
         // Connect to MongoDB and perform operations
         const client = await MongoClient.connect(process.env.MONGO_DB_STRING);
@@ -117,6 +118,7 @@ updateFmsTask.post('/updateFmsTask' , async (req, res) => {
             //employee = whoObject.who.employees[0];
             employee = document.fmsSteps[req.body.stepId].who.employees[0];
             processId = document.fmsProcess
+            fmsSteps = document.fmsSteps[req.body.stepId]
             plannedDate = document.fmsSteps[req.body.stepId].plannedDate
             what = document.fmsSteps[req.body.stepId].what
             how = document.fmsSteps[req.body.stepId].how
@@ -212,6 +214,20 @@ updateFmsTask.post('/updateFmsTask' , async (req, res) => {
                 res.status(500).send({ message: 'Error Creating Next Task', status: 500 });
                 return;
             }
+
+              //-------------------------Triggr Whatsapp Messages---------------------------------------//
+                console.log('trigger Whatsapp messages')
+                console.log(fmsSteps)
+                // const lastFmsStep = fmsSteps[fmsSteps.length - 1];
+                try {
+                    const sendWhatsapp = await axios.post(process.env.MAIN_BE_WHATSAPP_URL, {
+                    verify_company_url: companyUrl,
+                    fmsSteps: fmsSteps
+                    });
+                    console.log('WhatsApp message sent', sendWhatsapp.data);
+                } catch (whatsappError) {
+                    console.error('Error sending WhatsApp message:', whatsappError);
+                }
         }
        
 

@@ -108,6 +108,8 @@ updateFmsTask.post('/updateFmsTask' , async (req, res) => {
         console.log('stepId IS ' , req.body.stepId)
         console.log('no of steps in that fms' , document.fmsSteps.length)
         if(req.body.stepId <   document.fmsSteps.length) {
+            // WE SHOULD CREATE THE NEXT TASK AS THIS IS NOT THE LAST STEP IN THE FMS
+            console.log('THERE ARE OTHER STEPS')
             shouldcreateNextTask = true
             timeHrs = document.fmsSteps[req.body.stepId].plannedDate.duration
             console.log('timeHrs' , timeHrs )
@@ -131,8 +133,29 @@ updateFmsTask.post('/updateFmsTask' , async (req, res) => {
             isTransferredFrom = document.fmsSteps[req.body.stepId].plannedDate.isTransferredFrom
             isTranferredTo = document.fmsSteps[req.body.stepId].plannedDate.isTranferredTo
         } else {
+            //WE SHOULD NOT CREATE THE NEXT TASK AS THIS IS THE LAST STEP IN THE FMS
             shouldcreateNextTask = false
-            console.log('this is the last step')
+            console.log('THIS IS THE LAST STEP')
+
+            updateAndCountDocuments(companyUrl , req.body.fmsQAId , req.body.fmsMasterId);
+            //console.log('COUNT IS ' , count)
+
+            //MAKING THE NO OF FMS LIVE -1 AS THIS IS THE LAST STEP
+            // const masterCollection = db.collection('fmsMaster');
+            // const masterDocument = await masterCollection.findOne({ fmsName: req.body.fmsName });
+            // console.log('recieved document' , masterDocument.noOfLive)
+            // const newNoOfLive = masterDocument.noOfLive - 1;
+            // console.log("newNoOfLive",newNoOfLive);
+            // await masterCollection.updateOne(
+            //     { fmsMasterId: req.body.fmsMasterID },
+            //     { $set: { noOfLive: newNoOfLive } }
+            // );
+
+            // const fmsCollection = db.collection('fms');
+            // await fmsCollection.updateOne(
+            //     { fmsQAId: req.body.fmsQAId },
+            //     { $set: { fmsQAisLive: false } }
+            // );
 
         }
         // Close the MongoDB connection
@@ -264,10 +287,6 @@ async function updateTaskStatus(companyUrl ,fmsTaskId, formStepsAnswers,fmsTaskQ
                           fmsTaskQualityDetails: fmsTaskQualityDetails,
                           at : currentDate
                         }
-                        // ,
-                        // $currentDate: {
-                        //   at: true
-                        // }
                   },
                 { returnOriginal: false }
             );
@@ -321,6 +340,72 @@ async function updateTaskStatus(companyUrl ,fmsTaskId, formStepsAnswers,fmsTaskQ
         console.error('Error:', error);
     } finally {
         await client.close();
+    }
+}
+
+async function updateAndCountDocuments(companyUrl , fmsQAId , fmsMasterId) {
+
+    //update the fms to false
+    try {
+        const client = await MongoClient.connect(process.env.MONGO_DB_STRING);
+        await client.connect();
+        const db = client.db(companyUrl);
+        const collection = db.collection('fms');
+        
+            // Update a document based on fmsQAId
+            await collection.updateOne(
+                { fmsQAId: fmsQAId },
+                { $set: { fmsQAisLive: false } }
+            );
+            await client.close();
+        } catch (error) {
+            console.error("Error:", error);
+            
+        }
+
+        //find  no of fms flows that are still active for that master id
+        let count;
+        try {
+            const client = await MongoClient.connect(process.env.MONGO_DB_STRING);
+            await client.connect();
+            const db = client.db(companyUrl);
+            const collection = db.collection('fms');
+        
+        
+            // Define the query for counting documents
+            const query = {
+                fmsMasterId: fmsMasterId,
+                fmsQAisLive: true
+            };
+        
+            // Count documents matching the query
+            count = await collection.countDocuments(query);
+            console.log('NO OF FMS THAT ARE LIVE ' , count);
+            await client.close();
+        } catch (error) {
+            console.error("Error:", error);
+            
+        }
+
+        //update in fmsMaster the total no of fms's flow that are still active
+        try {
+            const client = await MongoClient.connect(process.env.MONGO_DB_STRING);
+            await client.connect();
+            const db = client.db(companyUrl);
+            const collection = db.collection('fmsMaster');
+       
+        const updateResult = await collection.updateOne(
+            { fmsMasterId: fmsMasterId }, // Use the document's _id to find and update
+            { $set: { noOfLive: count } }
+        );
+
+        console.log(`${updateResult.matchedCount} document(s) matched the filter, updated ${updateResult.modifiedCount} document(s) in the 'fmsMaster' collection.`);
+        
+        await client.close();
+        return count;
+    } catch (error) {
+        console.error("Error:", error);
+        return error
     }
 }
 

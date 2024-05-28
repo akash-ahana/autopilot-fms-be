@@ -183,6 +183,14 @@ submitFmsQuestionare.post('/submitFmsUserQAcreateTaskStep1', async (req, res) =>
     let working;        //this is only for hrs --> values can only be "INSIDE" or "OUTSIDE"
     let isWhatsAppEnabled;
     let whatsappData;
+    let formStepsAnswers;
+    //let fmsTaskQualityDetails;
+
+    //Here these below Four details are not required as we are only creating the first task , but while creating the step its added to their default values
+    //let isTransferredFrom;   
+    //let isTranferredTo;   
+    //let transferredFromTaskId;
+    //let transferredToTaskId;
     let fmsSteps;
 
     try {
@@ -221,23 +229,24 @@ submitFmsQuestionare.post('/submitFmsUserQAcreateTaskStep1', async (req, res) =>
         // Extract the first employee's information from the "employees" array
         employee = whoObject.who.employees[0];
         processId = document.fmsProcess
-        fmsSteps = document.fmsSteps[0]
         plannedDate = document.fmsSteps[0].plannedDate
         what = document.fmsSteps[0].what
         how = document.fmsSteps[0].how
         stepId = document.fmsSteps[0].id
-        stepType = document.fmsSteps[0].stepType
+        stepType = document.fmsSteps[0].stepType   //DOER OR QUALITY
         duration = document.fmsSteps[0].plannedDate.duration
         durationType = document.fmsSteps[0].plannedDate.durationType
-        isWhatsAppEnabled = document.fmsSteps[0].isWhatsAppEnabled
-        whatsappData = document.fmsSteps[0].whatsappData
-        
         //fetch working only when durationType is hrs else set it to null
         if(durationType == "hrs") {
             working = document.fmsSteps[0].plannedDate.working
         } else {
             working = null
         }
+        isWhatsAppEnabled = document.fmsSteps[0].isWhatsAppEnabled
+        whatsappData = document.fmsSteps[0].whatsappData
+        formStepsAnswers = document.fmsSteps[0].formStepsAnswers
+        isTransferredFrom = document.
+        fmsSteps = document.fmsSteps[0]
 
 
         console.log(`Process ID: ${document.fmsProcess}`);
@@ -277,36 +286,8 @@ submitFmsQuestionare.post('/submitFmsUserQAcreateTaskStep1', async (req, res) =>
             fmsTaskId = lastDocument[0].fmsTaskId + 1;
         }
 
-        function getDateFromIso(isoString) {
-            // Create a Date object from the ISO string
-            let date = new Date(isoString);
-
-            // Reformat the date to only include the year, month, and day
-            let formattedDate = date.toISOString().split('T')[0];
-
-            return formattedDate;
-        }
+       
         //Calculate Fms Planned Completion Time
-
-        // async function handleTaskDurationAndLocation(durationType, working, duration, companyUrl) {
-        //     if (durationType === "hrs") {
-        //         console.log('if task is in hrs');
-        //         if (working === "OUTSIDE") {
-        //             console.log('if time is 24hr - OUTSIDE');
-        //             plannedCompletionTime = addHrs(CurrentIST(), duration);
-        //         } else {
-        //             console.log('if time is during office hrs - INSIDE');
-        //             const response = await axios.post(process.env.MAIN_BE_WORKING_SHIFT_URL, { verify_company_url: companyUrl });
-        //             let shiftEndTime = response.data.result[0].shiftEndTime;
-        //             let shiftEndTimeDateFormat = getCurrentDateInIST(shiftEndTime);
-        //             plannedCompletionTime = addHrs(CurrentIST(), duration);
-
-        //             let balanceTime = calculateBalanceHours(plannedCompletionTime, shiftEndTimeDateFormat);
-        //             console.log(balanceTime);
-        //         }
-        //     }
-        // }
-
         if (durationType == "hrs") {
             if (working == "OUTSIDE") {
                 plannedCompletionTime = addHrs(CurrentIST(), duration);
@@ -685,19 +666,43 @@ submitFmsQuestionare.post('/submitFmsUserQAcreateTaskStep1', async (req, res) =>
     }
 
 
-    //-------------------------Triggr Whatsapp Messages---------------------------------------//
-    console.log('trigger Whatsapp messages')
-    console.log(fmsSteps)
-    // const lastFmsStep = fmsSteps[fmsSteps.length - 1];
-    try {
-        const sendWhatsapp = await axios.post(process.env.MAIN_BE_WHATSAPP_URL, {
-        verify_company_url: companyUrl,
-        fmsSteps: fmsSteps
-        });
-        console.log('WhatsApp message sent', sendWhatsapp.data);
-    } catch (whatsappError) {
-        console.error('Error sending WhatsApp message:', whatsappError);
-    }
+    // //-------------------------Triggr Whatsapp Messages---------------------------------------//
+    // console.log('trigger Whatsapp messages')
+    // console.log(fmsSteps)
+    // // const lastFmsStep = fmsSteps[fmsSteps.length - 1];
+    // try {
+    //     const sendWhatsapp = await axios.post(process.env.MAIN_BE_WHATSAPP_URL, {
+    //     verify_company_url: companyUrl,
+    //     fmsSteps: fmsSteps
+    //     });
+    //     console.log('WhatsApp message sent', sendWhatsapp.data);
+    // } catch (whatsappError) {
+    //     console.error('Error sending WhatsApp message:', whatsappError);
+    // }
+
+     //-------------------------Triggr Whatsapp Messages---------------------------------------//
+     console.log('trigger Whatsapp messages')
+       
+    //  if (Array.isArray(fmsSteps) && fmsSteps.length > 0) {
+    //      const lastFmsStep = fmsSteps[fmsSteps.length - 1];
+    //      const whatsappData = lastFmsStep.whatsappData; 
+     
+    //      console.log('Last fmsStep:', lastFmsStep);
+    //      console.log('WhatsApp data to send:', whatsappData);
+     
+    //      try {
+    //          const sendWhatsapp = await axios.post(process.env.MAIN_BE_WHATSAPP_URL, {
+    //              verify_company_url: companyUrl,
+    //              fmsSteps: lastFmsStep,
+    //              whatsappData: whatsappData // Include whatsappData if needed
+    //          });
+    //          console.log('WhatsApp message sent', sendWhatsapp.data);
+    //      } catch (whatsappError) {
+    //          console.error('Error sending WhatsApp message:', whatsappError);
+    //      }
+    //  } else {
+    //      console.error('fmsSteps is not an array or is empty');
+    //  }
 
     
 

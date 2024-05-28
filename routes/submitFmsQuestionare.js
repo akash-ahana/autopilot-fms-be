@@ -221,7 +221,7 @@ submitFmsQuestionare.post('/submitFmsUserQAcreateTaskStep1', async (req, res) =>
         // Extract the first employee's information from the "employees" array
         employee = whoObject.who.employees[0];
         processId = document.fmsProcess
-        fmsSteps = document.fmsSteps[0]
+        fmsSteps = document.fmsSteps
         plannedDate = document.fmsSteps[0].plannedDate
         what = document.fmsSteps[0].what
         how = document.fmsSteps[0].how

@@ -36,7 +36,11 @@ getfilterDoer.get('/getfilterDoer', async (req, res) => {
     const employeeId = userID;
   // Extract query parameters from request body
   let { status, processId, select_date, week_no } = req.query;
-  status = status.toUpperCase();
+  
+    // Only convert status to uppercase if it is defined
+      if (status!== undefined) {
+        status = status.toUpperCase();
+      }
 
   try {
     // Connect to MongoDB

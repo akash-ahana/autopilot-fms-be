@@ -35,7 +35,8 @@ getfilterDoer.get('/getfilterDoer', async (req, res) => {
     // Use userID as employeeId
     const employeeId = userID;
   // Extract query parameters from request body
-  const { status, processId, select_date, week_no } = req.query;
+  let { status, processId, select_date, week_no } = req.query;
+  status = status.toUpperCase();
 
   try {
     // Connect to MongoDB

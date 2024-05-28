@@ -36,7 +36,8 @@ getfilterPC.get('/getfilterPC', async (req, res) => {
     const processCoordinatorId = userID;
   
     // Extract query parameters from request body
-    const { status, employeeId, select_date, week_no } = req.query;
+    let { status, employeeId, select_date, week_no } = req.query;
+    status = status.toUpperCase();
   
     try {
       // Connect to MongoDB

@@ -7,64 +7,6 @@ const { CurrentIST, addHrs, addDays , addDaysToADate , formatDateFromDateObjectT
 const moment = require('moment');
 
 
-
-//currentTime - is the questionare submitted Time
-//timeIst - time in hrs "duration" - fmsSteps.Duration
-//Function To Clcuate Planned Completion Time
-// function calculatePlannedCompletionTime(currentTimeIST, duration, shiftStartTime, shiftEndTime, holidayNonWorkingDays) {
-    
-//     console.log('Recieved currentTimeIST in the function' , currentTimeIST)
-//     console.log('Recieved duration in the function' , duration)
-//     console.log('Recieved shiftStartTime in the function' , shiftStartTime)
-//     console.log('Recieved shiftEndTime in the function' , shiftEndTime)
-//     console.log('Recieved nonWorkingDays in the function' , holidayNonWorkingDays)
-//     let endTime = new Date(currentTimeIST);
-//     let hoursToAdd = duration;
-
-//     const shiftStart = new Date(currentTimeIST);
-//     shiftStart.setHours(...shiftStartTime.split(':'), 0, 0);
-
-//     const shiftEnd = new Date(currentTimeIST);
-//     shiftEnd.setHours(...shiftEndTime.split(':'), 0, 0);
-
-//     while (hoursToAdd > 0) {
-//         // If current time is before shift start, set current time to shift start
-//         if (endTime < shiftStart) {
-//             endTime = shiftStart;
-//         }
-
-//         // If adding hours exceeds the shift end, calculate remaining hours for the next day
-//         if (endTime.getTime() + hoursToAdd * 60 * 60 * 1000 > shiftEnd.getTime()) {
-//             const remainingHours = (shiftEnd.getTime() - endTime.getTime()) / (60 * 60 * 1000);
-//             hoursToAdd -= remainingHours;
-//             endTime.setDate(endTime.getDate() + 1); // Move to the next day
-
-//             // Check if the next date is a holiday or non-working day
-//             while (holidayNonWorkingDays.includes(formatDate(endTime))) {
-//                 endTime.setDate(endTime.getDate() + 1); // Move to the next day
-//             }
-
-//             endTime.setHours(...shiftStartTime.split(':'), 0, 0); // Set start time to shift start of the next day
-//         }
-//         else {
-//             endTime = new Date(endTime.getTime() + hoursToAdd * 60 * 60 * 1000);
-//             hoursToAdd = 0;
-//         }
-//     }
-
-//     return endTime;
-// }
-
-// // Format date as 'YYYY-MM-DD'
-// function formatDate(date) {    
-//     return date.toISOString().split('T')[0];
-// }
-
-
-
-
-
-
 submitFmsQuestionare.post('/submitFmsUserQAcreateTaskStep1', async (req, res) => {
     console.log("inside fms fmsUserQA create task for step 1")
     
@@ -271,7 +213,6 @@ submitFmsQuestionare.post('/submitFmsUserQAcreateTaskStep1', async (req, res) =>
     try {
 
         //calculation of fmsTaskPlannedCompletionTime (start time - form submitted time, and tat in hrs or days)
-
         // Connect to MongoDB and perform operations
         const client = await MongoClient.connect(process.env.MONGO_DB_STRING);
         console.log('Connected to database');
@@ -643,18 +584,7 @@ submitFmsQuestionare.post('/submitFmsUserQAcreateTaskStep1', async (req, res) =>
 
         console.log(result);
         console.log('Created the Task');
-        // res.json({
-        //     "message": `${req.body.fmsName} Step 1 is Successfully Created`,
-        //     "status": 200
-        // });
-
-        //send Whatsapp message to the user
-        // const sendWhatsapp = await axios.post(`${process.env.MAIN_BE_WHATSAPP_URL}`, {
-        //     verify_company_url: companyUrl,
-        //     isWhatsAppEnabled : isWhatsAppEnabled, 
-        //     whatsappData : whatsappData
-        // })
-
+        
         // Close the MongoDB connection
         await client.close();
         console.log('MongoDB connection closed');

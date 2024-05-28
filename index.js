@@ -149,6 +149,10 @@ app.use("/getfilterAdmin", getfilterAdmin);
 const getfilterPC = require("./routes/fmsFilter/getFilterPc");
 app.use("/getfilterPC", getfilterPC);
 
+//----------------------------------------------------------------------//
+const fmsdataanalytics = require("./routes/fmsDataAnalytics");
+app.use("/fmsdataanalytics", fmsdataanalytics);
+
 
 
 var server = app.listen(process.env.PORT, function () {

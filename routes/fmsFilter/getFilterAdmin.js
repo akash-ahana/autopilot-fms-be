@@ -35,7 +35,11 @@ getfilterAdmin.get('/getfilterAdmin', async (req, res) => {
   // Extract query parameters from request query
   let { status, processId, employeeId, select_date, week_no } = req.query;
 
+  // Only convert status to uppercase if it is defined
+if (status!== undefined) {
   status = status.toUpperCase();
+}
+  
   try {
     // Connect to MongoDB
     const client = await MongoClient.connect(process.env.MONGO_DB_STRING, { useNewUrlParser: true, useUnifiedTopology: true });

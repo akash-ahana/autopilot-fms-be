@@ -32,7 +32,7 @@ getFms.post('/findSingleFms' , async (req, res) => {
         userEmail = response.data.email_id;
     } catch (error) {
         console.error('Error posting data:', error);
-        res.status(500).send({ message: 'Error fetching user details', status: 500 });
+        res.status(500).send({ error: 'Error fetching user details', status: 500 });
         return;
     }
 
@@ -57,7 +57,7 @@ getFms.post('/findSingleFms' , async (req, res) => {
 
     } catch (error) {
         console.error('Error Connecting to MongoDB', error);
-        res.status(500).send({ message: `${req.body.fmsName}  NOT found`, status: 500 });
+        res.status(500).send({ error: `${req.body.fmsName}  NOT found`, status: 500 });
     }
 })
 
@@ -90,7 +90,7 @@ getFms.get('/findAllFms' , async (req, res) => {
         userEmail = response.data.email_id;
     } catch (error) {
         console.error('Error posting data:', error);
-        res.status(500).send({ message: 'Error fetching user details', status: 500 });
+        res.status(500).send({ error: 'Error fetching user details', status: 500 });
         return;
     }
 
@@ -116,7 +116,7 @@ getFms.get('/findAllFms' , async (req, res) => {
     } 
     catch (error) {
         console.error('Error Connecting to MongoDB', error);
-        res.status(500).send({ message: `${req.body.fmsName}  NOT found`, status: 500 });
+        res.status(500).send({ error: `${req.body.fmsName}  NOT found`, status: 500 });
     }
 })
 
@@ -148,7 +148,7 @@ getFms.get('/findFmsQuestionaresForUser' , async (req, res) => {
         userEmail = response.data.email_id;
     } catch (error) {
         console.error('Error posting data:', error);
-        res.status(500).send({ message: 'Error fetching user details', status: 500 });
+        res.status(500).send({ error: 'Error fetching user details', status: 500 });
         return;
     }
 
@@ -188,7 +188,7 @@ getFms.get('/findFmsQuestionaresForUser' , async (req, res) => {
 
     } catch (error) {
         console.error('Error Connecting to MongoDB', error);
-        res.status(500).send({ message: `${req.body.fmsName}  NOT found`, status: 500 });
+        res.status(500).send({ error: `${req.body.fmsName}  NOT found`, status: 500 });
     }
 
     
@@ -233,7 +233,7 @@ getFms.post('/findPreviousStepsDetails' , async (req, res) => {
         userEmail = response.data.email_id;
     } catch (error) {
         console.error('Error posting data:', error);
-        res.status(500).send({ message: 'Error fetching user details', status: 500 });
+        res.status(500).send({ error: 'Error fetching user details', status: 500 });
         return;
     }
 
@@ -279,7 +279,7 @@ getFms.post('/findPreviousStepsDetails' , async (req, res) => {
     } 
     catch (error) {
         console.error('Error Connecting to MongoDB', error);
-        res.status(500).send({ message: `${req.body.fmsName}  NOT found`, status: 500 });
+        res.status(500).send({ error: `${req.body.fmsName}  NOT found`, status: 500 });
     }
 })
 
@@ -317,7 +317,7 @@ getFms.post('/findAllDetailsForOneMasterFmstest' , async (req, res) => {
       userEmail = response.data.email_id;
   } catch (error) {
       //console.error('Error posting data:', error);
-      res.status(500).send({ message: 'Error fetching user details', status: 500 });
+      res.status(500).send({ error: 'Error fetching user details', status: 500 });
       return;
   }
 
@@ -340,7 +340,7 @@ getFms.post('/findAllDetailsForOneMasterFmstest' , async (req, res) => {
 
   // } catch (error) {
   //     //console.error('Error Connecting to MongoDB', error);
-  //     res.status(500).send({ message: `${req.body.fmsName}  NOT found`, status: 500 });
+  //     res.status(500).send({ error: `${req.body.fmsName}  NOT found`, status: 500 });
   // }
 
   //find the masterfms document that is requested
@@ -359,7 +359,7 @@ getFms.post('/findAllDetailsForOneMasterFmstest' , async (req, res) => {
     //console.log(fmsMasterDocument)
 } catch (error) {
     console.error('Error Connecting to MongoDB', error);
-    res.status(500).send({ message: `${req.body.fmsMasterId}  NOT found`, status: 500 });
+    res.status(500).send({ error: `${req.body.fmsMasterId}  NOT found`, status: 500 });
 }
 
 //find all fmsQA's(fmsQAid) - (all flows for that fms) for the single fms that is requested
@@ -377,7 +377,7 @@ try {
   //console.log(fmsflows)
 } catch (error) {
   console.error('Error Connecting to MongoDB', error);
-  res.status(500).send({ message: `${req.body.fmsMasterId}  NOT found`, status: 500 });
+  res.status(500).send({ error: `${req.body.fmsMasterId}  NOT found`, status: 500 });
 }
 
 
@@ -415,7 +415,7 @@ for(let i = 1; i<=fmsMasterDocument.fmsSteps.length;i++) {
         //console.log(allTasksForOneFlow)
     } catch (error) {
         console.error('Error Connecting to MongoDB', error);
-        res.status(500).send({ message: `${req.body.fmsMasterId}  NOT found`, status: 500 });
+        res.status(500).send({ error: `${req.body.fmsMasterId}  NOT found`, status: 500 });
     }
 }
 

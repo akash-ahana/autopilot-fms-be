@@ -44,7 +44,7 @@ updateFmsTask.post('/updateFmsTask' , async (req, res) => {
         userEmail = response.data.email_id;
     } catch (error) {
         //console.error('Error posting data:', error);
-        res.status(500).send({ message: 'Error fetching user details', status: 500 });
+         res.status(500).send({ error: "Error fetching user details", status: 500 });
         return;
     }
 
@@ -134,7 +134,7 @@ updateFmsTask.post('/updateFmsTask' , async (req, res) => {
 
     } catch (error) {
         console.error('Error posting data:', error);
-        res.status(500).send({ message: 'Error Submitting Fms Task ', status: 500 });
+         res.status(500).send({ error: "Error Submitting Fms Task", status: 500 });
         return;
     }
 
@@ -203,7 +203,7 @@ updateFmsTask.post('/updateFmsTask' , async (req, res) => {
         
             } catch (error) {
                 console.error('Error posting data:', error);
-                res.status(500).send({ message: 'Error Creating Next Task', status: 500 });
+                 res.status(500).send({ error: "Error Creating Next Task", status: 500 });
                 return;
             }
 

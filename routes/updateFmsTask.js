@@ -48,39 +48,29 @@ updateFmsTask.post('/updateFmsTask' , async (req, res) => {
         return;
     }
 
-    //console.log('FETCHED DETAILS FROM BEARER TOKEN')
+    console.log('UPDATING THE TASK')
     await updateTaskStatus(companyUrl , req.body.fmsTaskId, req.body.formStepsAnswers, req.body.fmsTaskQualityDetails);
 
-    //GETTING THE TASK THAT NEEDS TO BE UPDATED
-    //let taskToBeUpdated = getTaskToBeUpdated(companyUrl, req.body.fmsTaskId);
-    //console.log("taskToBeUpdated" , taskToBeUpdated)
-   
-
-   
-    //console.log('Updating The Task')
-    //updateTask(companyUrl , req.body.fmsTaskId, req.body.formStepsAnswers, req.body.fmsTaskQualityDetails)
-    //console.log('Updated The Task')
-
+    
+    
     console.log('fetching info to create next task')
-
-     //try block to fetch the next task
-     let shouldcreateNextTask;
-     let nextTask;
-     let employee;
-     let processId;
+    //try block to fetch the next task
+    let shouldcreateNextTask;
+    let nextTask;
+    let employee;
+    let processId;
     let plannedDate;
     let what;
     let how;
     let stepId;
-    let stepType;
-    let fmsTaskTransferredFrom;
-    let formStepsAnswers;
-    let fmsTaskQualityDetails;
-    let isTransferredFrom;   
-    let isTranferredTo;   
-    let transferredFromTaskId;
-    let transferredToTaskId;
-    let fmsSteps;   
+    let stepType;  //EITHER ITS DOER OR QULAITY
+    let duration;
+    let durationType;  //either hrs or days
+    let working;        //this is only for hrs --> values can only be "INSIDE" or "OUTSIDE"
+    let isWhatsAppEnabled;
+    let whatsappData;
+    let fmsSteps;
+
     try {
         // Connect to MongoDB and perform operations
         const client = await MongoClient.connect(process.env.MONGO_DB_STRING);
@@ -107,56 +97,36 @@ updateFmsTask.post('/updateFmsTask' , async (req, res) => {
 
         console.log('stepId IS ' , req.body.stepId)
         console.log('no of steps in that fms' , document.fmsSteps.length)
-        if(req.body.stepId <   document.fmsSteps.length) {
+        if(req.body.stepId < document.fmsSteps.length) {
             // WE SHOULD CREATE THE NEXT TASK AS THIS IS NOT THE LAST STEP IN THE FMS
             console.log('THERE ARE OTHER STEPS')
             shouldcreateNextTask = true
-            timeHrs = document.fmsSteps[req.body.stepId].plannedDate.duration
-            console.log('timeHrs' , timeHrs )
             console.log('Next task is ' , document.fmsSteps[req.body.stepId])
 
             nextTask = document.fmsSteps[req.body.stepId]
-            // Extract the first employee's information from the "employees" array
-            //employee = whoObject.who.employees[0];
             employee = document.fmsSteps[req.body.stepId].who.employees[0];
             processId = document.fmsProcess
-            fmsSteps = document.fmsSteps[req.body.stepId]
             plannedDate = document.fmsSteps[req.body.stepId].plannedDate
             what = document.fmsSteps[req.body.stepId].what
             how = document.fmsSteps[req.body.stepId].how
             stepId = document.fmsSteps[req.body.stepId].id
             stepType = document.fmsSteps[req.body.stepId].stepType
-            timeHrs = document.fmsSteps[req.body.stepId].plannedDate.duration
-            fmsTaskTransferredFrom = document.fmsSteps[req.body.stepId].plannedDate.fmsTaskTransferredFrom
-            formStepsAnswers =  document.fmsSteps[req.body.stepId].plannedDate.formStepsAnswers
-            fmsTaskQualityDetails = document.fmsSteps[req.body.stepId].plannedDate.fmsTaskQualityDetails
-            isTransferredFrom = document.fmsSteps[req.body.stepId].plannedDate.isTransferredFrom
-            isTranferredTo = document.fmsSteps[req.body.stepId].plannedDate.isTranferredTo
+            duration = document.fmsSteps[req.body.stepId].plannedDate.duration
+            durationType = document.fmsSteps[0].plannedDate.durationType
+            //fetch working only when durationType is hrs else set it to null
+            if(durationType == "hrs") {
+                working = document.fmsSteps[0].plannedDate.working
+            } else {
+                working = null
+            }
+            isWhatsAppEnabled = document.fmsSteps[0].isWhatsAppEnabled
+            whatsappData = document.fmsSteps[0].whatsappData
+            fmsSteps = document.fmsSteps[0]
         } else {
             //WE SHOULD NOT CREATE THE NEXT TASK AS THIS IS THE LAST STEP IN THE FMS
             shouldcreateNextTask = false
             console.log('THIS IS THE LAST STEP')
-
             updateAndCountDocuments(companyUrl , req.body.fmsQAId , req.body.fmsMasterId);
-            //console.log('COUNT IS ' , count)
-
-            //MAKING THE NO OF FMS LIVE -1 AS THIS IS THE LAST STEP
-            // const masterCollection = db.collection('fmsMaster');
-            // const masterDocument = await masterCollection.findOne({ fmsName: req.body.fmsName });
-            // console.log('recieved document' , masterDocument.noOfLive)
-            // const newNoOfLive = masterDocument.noOfLive - 1;
-            // console.log("newNoOfLive",newNoOfLive);
-            // await masterCollection.updateOne(
-            //     { fmsMasterId: req.body.fmsMasterID },
-            //     { $set: { noOfLive: newNoOfLive } }
-            // );
-
-            // const fmsCollection = db.collection('fms');
-            // await fmsCollection.updateOne(
-            //     { fmsQAId: req.body.fmsQAId },
-            //     { $set: { fmsQAisLive: false } }
-            // );
-
         }
         // Close the MongoDB connection
         await client.close();
@@ -169,9 +139,8 @@ updateFmsTask.post('/updateFmsTask' , async (req, res) => {
     }
 
 
-    //TRIGGER NEXT TASK IF THE STEP TYPE IS DOER
-    // if(nextTask.stepType == "DOER") {
-        //try catch block to create bext Task
+   
+        //try catch block to create next Task
         // create nex ttask only if it is not the last step in the FMS
         console.log('Creating the next task if ' , shouldcreateNextTask)
         if(shouldcreateNextTask) {
@@ -212,7 +181,7 @@ updateFmsTask.post('/updateFmsTask' , async (req, res) => {
                     stepId : stepId,
                     stepType : stepType,
                     fmsTaskCreatedTime : currentDate,
-                    fmsTaskPlannedCompletionTime : new Date(new Date().setHours(new Date().getHours() + Number(timeHrs.trim()))),
+                    fmsTaskPlannedCompletionTime : new Date(new Date().setHours(new Date().getHours() + Number(duration.trim()))),
                     formStepsAnswers: null,
                     fmsTaskQualityDetails : null,
                     fmsTaskTransferredFrom : null,
@@ -220,8 +189,8 @@ updateFmsTask.post('/updateFmsTask' , async (req, res) => {
                     isTransferredFrom: false,    //is this task transferred FROM other Doer
                     isTranferredTo: false,       //is this task transferred TO other Doer
                     transferredFromTaskId : null, 
-                    transferredToTaskId : null
-                    
+                    transferredToTaskId : null,
+                    at : null
                 });
         
                 console.log(result);

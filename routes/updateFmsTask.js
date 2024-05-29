@@ -6,6 +6,8 @@ const axios = require('axios');
 const { CurrentIST } = require('../helpers/convertGMTtoIST');
 const { Console } = require("winston/lib/winston/transports");
 const moment = require('moment-timezone');
+const { infoLogger, errorLogger } = require("../middleware/logger");
+
 
 //update fms tasks 
 //first it updates the task that is send 
@@ -28,9 +30,11 @@ updateFmsTask.post('/updateFmsTask' , async (req, res) => {
       const authHeader = req.headers.authorization;
       if (!authHeader || !authHeader.startsWith("Bearer")) {
         //console.log("error: Authorization header missing or malformed");
+        errorLogger.log("error", `Token ${req.headers.authorization} is un-authorized as authorization header missing or malformed for api updateFmsTask`);
         return res.status(401).json({ error: 'Unauthorized' });
       }
       const token = authHeader.split(" ")[1];
+      infoLogger.log("info", `token ${token} is verified successfuly for the api updateFmsTask`);
 
       //console.log('token fetched is ' , token)
 
@@ -42,8 +46,11 @@ updateFmsTask.post('/updateFmsTask' , async (req, res) => {
         userID = response.data.user_id;
         companyUrl = response.data.verify_company_url;
         userEmail = response.data.email_id;
+        infoLogger.log("info", `${JSON.stringify(response.data)} logged in autopilot fms`)
+
     } catch (error) {
         //console.error('Error posting data:', error);
+        errorLogger.log("error",`Failed to fetch user details due to ${error.message}`)
          res.status(500).send({ error: "Error fetching user details", status: 500 });
         return;
     }
@@ -78,6 +85,8 @@ updateFmsTask.post('/updateFmsTask' , async (req, res) => {
         console.log('companyUrl' , companyUrl)
         const db = client.db(companyUrl);
         const collection = db.collection('fmsMaster');
+        infoLogger.log("info", `${userName} from company ${companyUrl} hit the api updateFmsTask`)
+
 
         const cursor = collection.find({ fmsName: req.body.fmsName });
         const documents = await cursor.toArray();
@@ -128,6 +137,7 @@ updateFmsTask.post('/updateFmsTask' , async (req, res) => {
             console.log('THIS IS THE LAST STEP')
             updateAndCountDocuments(companyUrl , req.body.fmsQAId , req.body.fmsMasterId);
         }
+        infoLogger.log("info", `${userName} submitted the task ${JSON.stringify(req.body)} `)
         // Close the MongoDB connection
         await client.close();
         console.log('MongoDB connection closed');
@@ -181,7 +191,7 @@ updateFmsTask.post('/updateFmsTask' , async (req, res) => {
                     stepId : stepId,
                     stepType : stepType,
                     fmsTaskCreatedTime : currentDate,
-                    fmsTaskPlannedCompletionTime : new Date(new Date().setHours(new Date().getHours() + Number(duration.trim()))),
+                    fmsTaskPlannedCompletionTime : new Date(new Date().setHours(new Date().getHours() + Number(timeHrs.trim()))),
                     formStepsAnswers: null,
                     fmsTaskQualityDetails : null,
                     fmsTaskTransferredFrom : null,
@@ -243,6 +253,10 @@ async function updateTaskStatus(companyUrl ,fmsTaskId, formStepsAnswers,fmsTaskQ
                           fmsTaskQualityDetails: fmsTaskQualityDetails,
                           at : currentDate
                         }
+                        // ,
+                        // $currentDate: {
+                        //   at: true
+                        // }
                   },
                 { returnOriginal: false }
             );

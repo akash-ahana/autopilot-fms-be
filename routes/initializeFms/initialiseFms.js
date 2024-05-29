@@ -3,25 +3,32 @@ const initialiseFms = express.Router();
 var MongoClient = require('mongodb').MongoClient;
 const axios = require('axios');
 const moment = require('moment-timezone');
+const { infoLogger, errorLogger } = require("../../middleware/logger");
+
 
 initialiseFms.post('/fmsStep1', async (req, res) => {
+
     console.log("Fms Step 1 API hit");
     console.log(req.body);
+
 
     // Initialize variables to hold user details
     let userName = "";
     let userID = "";
     let companyUrl = "";
     let userEmail = "";
+  
+
 
     console.log(req.headers.authorization)
       const authHeader = req.headers.authorization;
       if (!authHeader || !authHeader.startsWith("Bearer")) {
         console.log("error: Authorization header missing or malformed");
+        errorLogger.log("error", `Token ${req.headers.authorization} is un-authorized as authorization header missing or malformed for api fmsStep1`);
         return res.status(401).json({ error: 'Unauthorized' });
       }
       const token = authHeader.split(" ")[1];
-
+      infoLogger.log("info", `token ${token} is verified successfuly for the api fmsStep1`);
       console.log('token fetched is ' , token)
 
     try {
@@ -32,8 +39,10 @@ initialiseFms.post('/fmsStep1', async (req, res) => {
         userID = response.data.user_id;
         companyUrl = response.data.verify_company_url;
         userEmail = response.data.email_id;
+        infoLogger.log("info", `${JSON.stringify(response.data)} logged in autopilot fms`)
     } catch (error) {
         console.error('Error posting data:', error);
+        errorLogger.log("error",`Failed to fetch user details due to ${error.message}`)
          res.status(500).send({ error: 'Error fetching user details', status: 500 });
         return;
     }
@@ -44,6 +53,27 @@ initialiseFms.post('/fmsStep1', async (req, res) => {
         console.log('Connected to database');
         const db = client.db(companyUrl);
         const collection = db.collection('fmsMaster');
+        infoLogger.log("info", `${userName} from company ${companyUrl} hit the api fmsStep1`)
+
+
+         // Convert req.body.fmsName to lowercase and remove spaces
+       const formattedFmsName = req.body.fmsName.toLowerCase().replace(/\s+/g, '');
+ 
+       // Check if fmsName already exists in the collection (case-insensitive, ignoring spaces)
+       const existingDocument = await collection.findOne({
+           $expr: {
+               $eq: [
+                   { $toLower: { $replaceAll: { input: "$fmsName", find: " ", replacement: "" } } },
+                   formattedFmsName
+               ]
+           }
+       });
+ 
+       if (existingDocument) {
+           await client.close();
+           errorLogger.log("error" , `${userName} failed to create step1 fms title ${req.body.fmsName} already exists `);
+           return res.status(400).json({ error: "The FMS Title already exists", status: 400 });
+       }
 
          // Convert req.body.fmsName to lowercase and remove spaces
        const formattedFmsName = req.body.fmsName.toLowerCase().replace(/\s+/g, '');
@@ -100,7 +130,8 @@ initialiseFms.post('/fmsStep1', async (req, res) => {
         const insertedDocument = await collection.findOne({ _id: result.insertedId });
 
         console.log(insertedDocument);
-
+      
+        infoLogger.log("info", `${userName} is creating step1 by inserting data with ${JSON.stringify(req.body)}.Based on the request,step1 is created with the data ${JSON.stringify(insertedDocument)}`)
         res.json({
             "message": `${req.body.fmsName} Step 1 is Successfully Created`,
             "status": 200,
@@ -118,6 +149,7 @@ initialiseFms.post('/fmsStep1', async (req, res) => {
         console.log('MongoDB connection closed');
     } catch (error) {
         console.error('Error Connecting to MongoDB', error);
+        errorLogger.log("error" , `${userName} failed to create step1 due to ${error.message}`);
          res.status(500).send({ error: ` Step 1 is NOT Created`, status: 500 });
     }
 });
@@ -138,10 +170,11 @@ initialiseFms.post('/editFmsStep1', async (req, res) => {
     const authHeader = req.headers.authorization;
     if (!authHeader || !authHeader.startsWith("Bearer")) {
       console.log("error: Authorization header missing or malformed");
+      errorLogger.log("error", `Token ${req.headers.authorization} is un-authorized as authorization header missing or malformed for api editFmsStep`);
       return res.status(401).json({ error: 'Unauthorized' });
     }
     const token = authHeader.split(" ")[1];
-
+    infoLogger.log("info", `token ${token} is verified successfuly for the api editFmsStep1`);
     console.log('token fetched is ' , token)
 
   try {
@@ -152,8 +185,10 @@ initialiseFms.post('/editFmsStep1', async (req, res) => {
       userID = response.data.user_id;
       companyUrl = response.data.verify_company_url;
       userEmail = response.data.email_id;
+      infoLogger.log("info", `${JSON.stringify(response.data)} logged in autopilot fms`)
   } catch (error) {
       console.error('Error posting data:', error);
+      errorLogger.log("error",`Failed to fetch user details due to ${error.message}`)
        res.status(500).send({ error: 'Error fetching user details', status: 500 });
       return;
   }
@@ -164,6 +199,7 @@ initialiseFms.post('/editFmsStep1', async (req, res) => {
       console.log('Connected to database');
       const db = client.db(companyUrl);
       const collection = db.collection('fmsMaster');
+      infoLogger.log("info", `${userName} from company ${companyUrl}  hit the api editFmsStep1`)
 
       
       ////Fetch process details
@@ -198,6 +234,7 @@ initialiseFms.post('/editFmsStep1', async (req, res) => {
       // }
 
       console.log('Document updated:', result.value);
+      infoLogger.log("info", `${userName} has updated step1 by requesting data with ${JSON.stringify(req.body)}.Based on the request,step1 is updated with the data ${JSON.stringify(insertedDocument)}`)
 
       res.json({
           "message": `${req.body.fmsName} Step 1 is Successfully Edited`,
@@ -212,6 +249,7 @@ initialiseFms.post('/editFmsStep1', async (req, res) => {
       console.log('MongoDB connection closed');
   } catch (error) {
       console.error('Error Connecting to MongoDB', error);
+      errorLogger.log("error" , `${userName} failed to update step1 due to ${error.message}`);
        res.status(500).send({ error: ` Step 1 is NOT Edited`, status: 500 });
   }
 });
@@ -233,10 +271,11 @@ initialiseFms.post('/addFmsUserAccess' , async (req, res) => {
       const authHeader = req.headers.authorization;
       if (!authHeader || !authHeader.startsWith("Bearer")) {
         console.log("error: Authorization header missing or malformed");
+        errorLogger.log("error", `Token ${req.headers.authorization} is un-authorized as authorization header missing or malformed for api addFmsUserAccess`);
         return res.status(401).json({ error: 'Unauthorized' });
       }
       const token = authHeader.split(" ")[1];
-
+      infoLogger.log("info", `token ${token} is verified successfuly for the api addFmsUserAccess`);
       console.log('token fetched is ' , token)
 
     try {
@@ -247,8 +286,10 @@ initialiseFms.post('/addFmsUserAccess' , async (req, res) => {
         userID = response.data.user_id;
         companyUrl = response.data.verify_company_url;
         userEmail = response.data.email_id;
+        infoLogger.log("info", `${JSON.stringify(response.data)} logged in autopilot fms`)
     } catch (error) {
         console.error('Error posting data:', error);
+        errorLogger.log("error",`Failed to fetch user details due to ${error.message}`)
          res.status(500).send({ error: 'Error fetching user details', status: 500 });
         return;
     }
@@ -259,6 +300,8 @@ initialiseFms.post('/addFmsUserAccess' , async (req, res) => {
                 console.log('Connected to database');
                 const db = client.db(companyUrl);
                 const collection = db.collection('fmsMaster');
+                infoLogger.log("info", `${userName} from company ${companyUrl}  hit the api addFmsUserAccess`)
+
 
                 //const filter = { fmsName : req.body.fmsName };
                 const filter = { fmsMasterId : req.body.fmsMasterId };
@@ -276,6 +319,7 @@ initialiseFms.post('/addFmsUserAccess' , async (req, res) => {
                 }
         
                 console.log(result)
+                infoLogger.log("info", `${userName} assigned FMS Id:${req.body.fmsMasterId} task and provided an access to ${JSON.stringify(req.body.fmsUsers)}`)
                 res.json({
                     "message" : `${req.body.fmsName} FMS Users is Successfully Added`,
                     "status" : 200
@@ -286,6 +330,7 @@ initialiseFms.post('/addFmsUserAccess' , async (req, res) => {
             } 
             catch (error) {
                 console.error('Error Connecting to MongoDB', error);
+                errorLogger.log("error" , `${userName} failed to provide access due to ${error.message}`);
                  res.status(500).send({ error: `${req.body.fmsName} Step 1 is NOT Added`, status: 500 });
             }
 
@@ -308,11 +353,12 @@ initialiseFms.post('/createFmsQuestionare' , async (req, res) => {
       const authHeader = req.headers.authorization;
       if (!authHeader || !authHeader.startsWith("Bearer")) {
         console.log("error: Authorization header missing or malformed");
+        errorLogger.log("error", `Token ${req.headers.authorization} is un-authorized as authorization header missing or malformed for api createFmsQuestionare`);
         return res.status(401).json({ error: 'Unauthorized' });
       }
-      const token = authHeader.split(" ")[1];
-
-      console.log('token fetched is ' , token)
+      const token = authHeader.split(" ")[1]; 
+      infoLogger.log("info", `token ${token} is verified successfuly for the api createFmsQuestionare`);
+       console.log('token fetched is ' , token)
 
     try {
         // Fetch user details and company details based on the token
@@ -322,9 +368,11 @@ initialiseFms.post('/createFmsQuestionare' , async (req, res) => {
         userID = response.data.user_id;
         companyUrl = response.data.verify_company_url;
         userEmail = response.data.email_id;
+        infoLogger.log("info", `${JSON.stringify(response.data)} logged in autopilot fms`)
     } catch (error) {
         console.error('Error posting data:', error);
-         res.status(500).send({ error: 'Error fetching user details', status: 500 });
+        errorLogger.log("error",`Failed to fetch user details due to ${error.message}`)
+        res.status(500).send({ error: 'Error fetching user details', status: 500 });
         return;
     }
     
@@ -335,6 +383,8 @@ initialiseFms.post('/createFmsQuestionare' , async (req, res) => {
         console.log('Connected to database');
         const db = client.db(companyUrl);
         const collection = db.collection('fmsMaster');
+        infoLogger.log("info", `${userName} from company ${companyUrl}  hit the api createFmsQuestionare`)
+
 
         //const filter = { fmsName : req.body.fmsName };
         const filter = { fmsMasterId : req.body.fmsMasterId };
@@ -352,6 +402,7 @@ initialiseFms.post('/createFmsQuestionare' , async (req, res) => {
     }
 
     console.log(result)
+    infoLogger.log("info", `${userName} updating ${JSON.stringify(update)} questionary and successfully updated ${JSON.stringify(result)}`)
     res.json({
         "message" : `${req.body.fmsName} FMS Questionare is Successfully Added`,
         "status" : 200
@@ -359,11 +410,12 @@ initialiseFms.post('/createFmsQuestionare' , async (req, res) => {
 
         // Close the MongoDB connection
         await client.close();
-        //console.log('MongoDB connection closed');
+       // console.log('MongoDB connection closed');
 
     }
     catch (error) {
         console.error('Error Connecting to MongoDB', error);
+        errorLogger.log("error", `${userName} failed to update fms questionries due to ${error.message}`);
          res.status(500).send({ error: `${req.body.fmsName} FMS Questionare is Not Added`, status: 500 });
     }
 })
@@ -383,10 +435,11 @@ initialiseFms.post('/createFmsSteps' , async (req, res) => {
       const authHeader = req.headers.authorization;
       if (!authHeader || !authHeader.startsWith("Bearer")) {
         console.log("error: Authorization header missing or malformed");
+        errorLogger.log("error", `Token ${req.headers.authorization} is un-authorized as authorization header missing or malformed for api createFmsSteps`);
         return res.status(401).json({ error: 'Unauthorized' });
       }
       const token = authHeader.split(" ")[1];
-
+      infoLogger.log("info", `token ${token} is verified successfuly for the api createFmsSteps`);
       console.log('token fetched is ' , token)
 
     try {
@@ -397,9 +450,12 @@ initialiseFms.post('/createFmsSteps' , async (req, res) => {
         userID = response.data.user_id;
         companyUrl = response.data.verify_company_url;
         userEmail = response.data.email_id;
+        infoLogger.log("info", `${JSON.stringify(response.data)} logged in autopilot fms`)
+
         
     } catch (error) {
         console.error('Error posting data:', error);
+        errorLogger.log("error",`Failed to fetch user details due to ${error.message}`)
          res.status(500).send({ error: 'Error fetching user details', status: 500 });
         return;
     }
@@ -411,6 +467,8 @@ initialiseFms.post('/createFmsSteps' , async (req, res) => {
         console.log('Connected to database');
         const db = client.db(companyUrl);
         const collection = db.collection('fmsMaster');
+        infoLogger.log("info", `${userName} from company ${companyUrl}  hit the api createFmsSteps`)
+
 
         //const filter = { fmsName : req.body.fmsName };
         const filter = { fmsMasterId : req.body.fmsMasterId };
@@ -428,6 +486,7 @@ initialiseFms.post('/createFmsSteps' , async (req, res) => {
     }
 
     console.log(result)
+    infoLogger.log("info", `${userName} creating ${JSON.stringify(update)} fms steps and successfully updated ${JSON.stringify(result)} fms steps`)
     res.json({
         "message" : `${req.body.fmsName} FMS Steps is Successfully Added`,
         "status" : 200
@@ -452,6 +511,7 @@ initialiseFms.post('/createFmsSteps' , async (req, res) => {
     }
     catch (error) {
         console.error('Error Connecting to MongoDB', error);
+        errorLogger.log("error", `${userName} failed to create fms steps due to ${error.message}`);
          res.status(500).send({ error: `${req.body.fmsName} FMS Steps is NOT  Added`, status: 500 });
     }
 
@@ -472,10 +532,11 @@ initialiseFms.post('/makeFmsLive' , async (req, res) => {
       const authHeader = req.headers.authorization;
       if (!authHeader || !authHeader.startsWith("Bearer")) {
         console.log("error: Authorization header missing or malformed");
+        errorLogger.log("error", `Token ${req.headers.authorization} is un-authorized as authorization header missing or malformed for api makeFmsLive`);
         return res.status(401).json({ error: 'Unauthorized' });
       }
       const token = authHeader.split(" ")[1];
-
+      infoLogger.log("info", `token ${token} is verified successfuly for the api makeFmsLive`);
       console.log('token fetched is ' , token)
 
     try {
@@ -486,8 +547,11 @@ initialiseFms.post('/makeFmsLive' , async (req, res) => {
         userID = response.data.user_id;
         companyUrl = response.data.verify_company_url;
         userEmail = response.data.email_id;
+        infoLogger.log("info", `${JSON.stringify(response.data)} logged in autopilot fms`)
+
     } catch (error) {
         console.error('Error posting data:', error);
+        errorLogger.log("error",`Failed to fetch user details due to ${error.message}`)
          res.status(500).send({ error: 'Error fetching user details', status: 500 });
         return;
     }
@@ -499,6 +563,7 @@ initialiseFms.post('/makeFmsLive' , async (req, res) => {
         console.log('Connected to database');
         const db = client.db(companyUrl);
         const collection = db.collection('fmsMaster');
+        infoLogger.log("info", `${userName} from company ${companyUrl}  hit the api makeFmsLive`)
 
         //const filter = { fmsName : req.body.fmsName };
         const filter = { fmsMasterId : req.body.fmsMasterId };
@@ -516,8 +581,9 @@ initialiseFms.post('/makeFmsLive' , async (req, res) => {
     }
 
     console.log(result)
+    infoLogger.log("info", `FMS id:${req.body.fmsMasterId} is set to live by ${userName}`)
     res.json({
-        "message" : `${req.body.fmsName} FMS Steps is Successfully Added`,
+        "message" : `${req.body.fmsName} is Successfully in Live`,
         "status" : 200
     })
 
@@ -528,6 +594,7 @@ initialiseFms.post('/makeFmsLive' , async (req, res) => {
     }
     catch (error) {
         console.error('Error Connecting to MongoDB', error);
+        errorLogger.log("error", `${userName} failed to make fms live due to ${error.message}`);
          res.status(500).send({ error: `${req.body.fmsName} FMS Steps is NOT  Added`, status: 500 });
     }
 

@@ -47,17 +47,21 @@ if (status!== undefined) {
     const db = client.db(companyUrl);
     const collection = db.collection("fmsTasks");
 
+    const { status, employeeId, processId, select_date, week_no } = req.body;
+
     // Log the specific fields to debug
     console.log("fmsTaskStatus:", status);
-    console.log("processId:", processId);
-    console.log("fmsTaskPlannedCompletionTime:", select_date);
-    console.log("week_number:", week_no);
+    console.log("employeeId:", employeeId);
 
     // Construct the query object dynamically based on the presence of fields
     const query = {};
     if (status) query.fmsTaskStatus = status;
     if (processId) query['fmsProcessID.processId'] = parseInt(processId, 10);
     if (employeeId) query['fmsTaskDoer.employeeId'] = parseInt(employeeId, 10);
+
+    if (status) query.fmsTaskStatus = status;
+    if (employeeId) query['fmsTaskDoer.employeeId'] = employeeId;
+    if (processId) query['fmsProcessID.processId'] = processId;
 
     if (select_date) {
       const startOfDay = new Date(select_date);
@@ -73,7 +77,7 @@ if (status!== undefined) {
 
     if (week_no) {
       try {
-        console.log("Received week_no:", week_no);
+        console.log("week_no input:", week_no);
 
         // Fetch company starting day of the week
         const companyStartingDayWeekResponse = await axios.post(process.env.MAIN_BE_STARTDAY_WEEK_URL, {
@@ -84,7 +88,7 @@ if (status!== undefined) {
         console.log("Company Starting Day Week Response Results:", responseResults);
 
         // Find the object that matches the provided week_number
-        const matchingWeek = responseResults.find(week => week.weekNo === parseInt(week_no, 10));
+        const matchingWeek = responseResults.find(week => week.weekNo === week_no);
 
         if (matchingWeek) {
           const { weekStartingDate, weekStartingDay, weekNo } = matchingWeek;

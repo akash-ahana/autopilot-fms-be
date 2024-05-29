@@ -35,12 +35,7 @@ getfilterDoer.get('/getfilterDoer', async (req, res) => {
     // Use userID as employeeId
     const employeeId = userID;
   // Extract query parameters from request body
-  let { status, processId, select_date, week_no } = req.query;
-  
-    // Only convert status to uppercase if it is defined
-      if (status!== undefined) {
-        status = status.toUpperCase();
-      }
+  const { status, processId, select_date, week_no } = req.body;
 
   try {
     // Connect to MongoDB
@@ -51,15 +46,16 @@ getfilterDoer.get('/getfilterDoer', async (req, res) => {
 
     // Log the specific fields to debug
     console.log("fmsTaskStatus:", status);
+    console.log("employeeId:", employeeId);
     console.log("processId:", processId);
     console.log("fmsTaskPlannedCompletionTime:", select_date);
     console.log("week_number:", week_no);
 
     // Construct the query object dynamically based on the presence of fields
-    const query = {'fmsTaskDoer.employeeId':employeeId};
+    const query = {};
     if (status) query.fmsTaskStatus = status;
-    if (processId) query['fmsProcessID.processId'] = parseInt(processId, 10);
-
+    if (employeeId) query['fmsTaskDoer.employeeId'] = employeeId;
+    if (processId) query['fmsProcessID.processId'] = processId;
     if (select_date) {
       const startOfDay = new Date(select_date);
       startOfDay.setUTCHours(0, 0, 0, 0);
@@ -74,7 +70,7 @@ getfilterDoer.get('/getfilterDoer', async (req, res) => {
 
     if (week_no) {
       try {
-        console.log("Received week_no:", week_no);
+        console.log("week_no input:", week_no);
 
         // Fetch company starting day of the week
         const companyStartingDayWeekResponse = await axios.post(process.env.MAIN_BE_STARTDAY_WEEK_URL, {
@@ -85,7 +81,7 @@ getfilterDoer.get('/getfilterDoer', async (req, res) => {
         console.log("Company Starting Day Week Response Results:", responseResults);
 
         // Find the object that matches the provided week_number
-        const matchingWeek = responseResults.find(week => week.weekNo === parseInt(week_no, 10));
+        const matchingWeek = responseResults.find(week => week.weekNo === week_no);
 
         if (matchingWeek) {
           const { weekStartingDate, weekStartingDay, weekNo } = matchingWeek;

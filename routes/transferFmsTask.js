@@ -3,6 +3,7 @@ const transferFmsTask = express.Router();
 var MongoClient = require("mongodb").MongoClient;
 const axios = require("axios");
 const { ObjectId } = require("mongodb");
+const moment = require('moment-timezone');
 
 // transfer FMS using
 transferFmsTask.post("/transferFmsTask", async (req, res) => {
@@ -36,7 +37,7 @@ transferFmsTask.post("/transferFmsTask", async (req, res) => {
       userEmail = response.data.email_id;
   } catch (error) {
       //console.error('Error posting data:', error);
-      res.status(500).send({ message: 'Error fetching user details', status: 500 });
+       res.status(500).send({ error: "Error fetching user details", status: 500 });
       return;
   }
 
@@ -101,8 +102,22 @@ transferFmsTask.post("/transferFmsTask", async (req, res) => {
     //res.json({ message: "Task transferred successfully", status: 200 });
   } catch (error) {
     console.error("Error Connecting to MongoDB", error);
-    res.status(500).send({ message: "Error transferring task", status: 500 });
+     res.status(500).send({ error: "Error transferring task", status: 500 });
   }
+
+  //  //-------------------------Triggr Whatsapp Messages---------------------------------------//
+  //  console.log('trigger Whatsapp messages')
+  //  console.log(fmsSteps)
+  //  // const lastFmsStep = fmsSteps[fmsSteps.length - 1];
+  //  try {
+  //      const sendWhatsapp = await axios.post(process.env.MAIN_BE_WHATSAPP_URL, {
+  //      verify_company_url: companyUrl,
+  //      fmsSteps: fmsSteps
+  //      });
+  //      console.log('WhatsApp message sent', sendWhatsapp.data);
+  //  } catch (whatsappError) {
+  //      console.error('Error sending WhatsApp message:', whatsappError);
+  //  }
 
   res.json({ message: "Task transferred successfully", status: 200 });
 });

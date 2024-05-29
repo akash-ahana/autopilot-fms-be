@@ -5,6 +5,7 @@ const { MongoClient, ObjectId } = require('mongodb');
 const axios = require('axios');
 const { CurrentIST } = require('../helpers/convertGMTtoIST');
 const { Console } = require("winston/lib/winston/transports");
+const moment = require('moment-timezone');
 
 //update fms tasks 
 //first it updates the task that is send 
@@ -43,42 +44,33 @@ updateFmsTask.post('/updateFmsTask' , async (req, res) => {
         userEmail = response.data.email_id;
     } catch (error) {
         //console.error('Error posting data:', error);
-        res.status(500).send({ message: 'Error fetching user details', status: 500 });
+         res.status(500).send({ error: "Error fetching user details", status: 500 });
         return;
     }
 
-    //console.log('FETCHED DETAILS FROM BEARER TOKEN')
+    console.log('UPDATING THE TASK')
     await updateTaskStatus(companyUrl , req.body.fmsTaskId, req.body.formStepsAnswers, req.body.fmsTaskQualityDetails);
 
-    //GETTING THE TASK THAT NEEDS TO BE UPDATED
-    //let taskToBeUpdated = getTaskToBeUpdated(companyUrl, req.body.fmsTaskId);
-    //console.log("taskToBeUpdated" , taskToBeUpdated)
-   
-
-   
-    //console.log('Updating The Task')
-    //updateTask(companyUrl , req.body.fmsTaskId, req.body.formStepsAnswers, req.body.fmsTaskQualityDetails)
-    //console.log('Updated The Task')
-
+    
+    
     console.log('fetching info to create next task')
-
-     //try block to fetch the next task
-     let shouldcreateNextTask;
-     let nextTask;
-     let employee;
-     let processId;
+    //try block to fetch the next task
+    let shouldcreateNextTask;
+    let nextTask;
+    let employee;
+    let processId;
     let plannedDate;
     let what;
     let how;
     let stepId;
-    let stepType;
-    let fmsTaskTransferredFrom;
-    let formStepsAnswers;
-    let fmsTaskQualityDetails;
-    let isTransferredFrom;   
-    let isTranferredTo;   
-    let transferredFromTaskId;
-    let transferredToTaskId;   
+    let stepType;  //EITHER ITS DOER OR QULAITY
+    let duration;
+    let durationType;  //either hrs or days
+    let working;        //this is only for hrs --> values can only be "INSIDE" or "OUTSIDE"
+    let isWhatsAppEnabled;
+    let whatsappData;
+    let fmsSteps;
+
     try {
         // Connect to MongoDB and perform operations
         const client = await MongoClient.connect(process.env.MONGO_DB_STRING);
@@ -105,15 +97,13 @@ updateFmsTask.post('/updateFmsTask' , async (req, res) => {
 
         console.log('stepId IS ' , req.body.stepId)
         console.log('no of steps in that fms' , document.fmsSteps.length)
-        if(req.body.stepId <   document.fmsSteps.length) {
+        if(req.body.stepId < document.fmsSteps.length) {
+            // WE SHOULD CREATE THE NEXT TASK AS THIS IS NOT THE LAST STEP IN THE FMS
+            console.log('THERE ARE OTHER STEPS')
             shouldcreateNextTask = true
-            timeHrs = document.fmsSteps[req.body.stepId].plannedDate.duration
-            console.log('timeHrs' , timeHrs )
             console.log('Next task is ' , document.fmsSteps[req.body.stepId])
 
             nextTask = document.fmsSteps[req.body.stepId]
-            // Extract the first employee's information from the "employees" array
-            //employee = whoObject.who.employees[0];
             employee = document.fmsSteps[req.body.stepId].who.employees[0];
             processId = document.fmsProcess
             plannedDate = document.fmsSteps[req.body.stepId].plannedDate
@@ -121,16 +111,22 @@ updateFmsTask.post('/updateFmsTask' , async (req, res) => {
             how = document.fmsSteps[req.body.stepId].how
             stepId = document.fmsSteps[req.body.stepId].id
             stepType = document.fmsSteps[req.body.stepId].stepType
-            timeHrs = document.fmsSteps[req.body.stepId].plannedDate.duration
-            fmsTaskTransferredFrom = document.fmsSteps[req.body.stepId].plannedDate.fmsTaskTransferredFrom
-            formStepsAnswers =  document.fmsSteps[req.body.stepId].plannedDate.formStepsAnswers
-            fmsTaskQualityDetails = document.fmsSteps[req.body.stepId].plannedDate.fmsTaskQualityDetails
-            isTransferredFrom = document.fmsSteps[req.body.stepId].plannedDate.isTransferredFrom
-            isTranferredTo = document.fmsSteps[req.body.stepId].plannedDate.isTranferredTo
+            duration = document.fmsSteps[req.body.stepId].plannedDate.duration
+            durationType = document.fmsSteps[0].plannedDate.durationType
+            //fetch working only when durationType is hrs else set it to null
+            if(durationType == "hrs") {
+                working = document.fmsSteps[0].plannedDate.working
+            } else {
+                working = null
+            }
+            isWhatsAppEnabled = document.fmsSteps[0].isWhatsAppEnabled
+            whatsappData = document.fmsSteps[0].whatsappData
+            fmsSteps = document.fmsSteps[0]
         } else {
+            //WE SHOULD NOT CREATE THE NEXT TASK AS THIS IS THE LAST STEP IN THE FMS
             shouldcreateNextTask = false
-            console.log('this is the last step')
-
+            console.log('THIS IS THE LAST STEP')
+            updateAndCountDocuments(companyUrl , req.body.fmsQAId , req.body.fmsMasterId);
         }
         // Close the MongoDB connection
         await client.close();
@@ -138,14 +134,13 @@ updateFmsTask.post('/updateFmsTask' , async (req, res) => {
 
     } catch (error) {
         console.error('Error posting data:', error);
-        res.status(500).send({ message: 'Error Submitting Fms Task ', status: 500 });
+         res.status(500).send({ error: "Error Submitting Fms Task", status: 500 });
         return;
     }
 
 
-    //TRIGGER NEXT TASK IF THE STEP TYPE IS DOER
-    // if(nextTask.stepType == "DOER") {
-        //try catch block to create bext Task
+   
+        //try catch block to create next Task
         // create nex ttask only if it is not the last step in the FMS
         console.log('Creating the next task if ' , shouldcreateNextTask)
         if(shouldcreateNextTask) {
@@ -186,7 +181,7 @@ updateFmsTask.post('/updateFmsTask' , async (req, res) => {
                     stepId : stepId,
                     stepType : stepType,
                     fmsTaskCreatedTime : currentDate,
-                    fmsTaskPlannedCompletionTime : new Date(new Date().setHours(new Date().getHours() + Number(timeHrs.trim()))),
+                    fmsTaskPlannedCompletionTime : new Date(new Date().setHours(new Date().getHours() + Number(duration.trim()))),
                     formStepsAnswers: null,
                     fmsTaskQualityDetails : null,
                     fmsTaskTransferredFrom : null,
@@ -194,8 +189,8 @@ updateFmsTask.post('/updateFmsTask' , async (req, res) => {
                     isTransferredFrom: false,    //is this task transferred FROM other Doer
                     isTranferredTo: false,       //is this task transferred TO other Doer
                     transferredFromTaskId : null, 
-                    transferredToTaskId : null
-                    
+                    transferredToTaskId : null,
+                    at : null
                 });
         
                 console.log(result);
@@ -208,9 +203,10 @@ updateFmsTask.post('/updateFmsTask' , async (req, res) => {
         
             } catch (error) {
                 console.error('Error posting data:', error);
-                res.status(500).send({ message: 'Error Creating Next Task', status: 500 });
+                 res.status(500).send({ error: "Error Creating Next Task", status: 500 });
                 return;
             }
+
         }
        
 
@@ -237,16 +233,15 @@ async function updateTaskStatus(companyUrl ,fmsTaskId, formStepsAnswers,fmsTaskQ
         // Recursive function to update task and its transferred tasks
         async function updateTaskRecursively(taskId) {
             console.log('TASK THAT IS GETTING UPDATED IS (RECURSIVE FUNCTION)' , taskId)
+            const currentDate = moment().tz('Asia/Kolkata').format();
             const task = await collection.findOneAndUpdate(
                 { fmsTaskId: taskId },
                {
                    $set: {
                           fmsTaskStatus: "COMPLETED",
                           formStepsAnswers: formStepsAnswers,
-                          fmsTaskQualityDetails: fmsTaskQualityDetails
-                        },
-                        $currentDate: {
-                          at: true
+                          fmsTaskQualityDetails: fmsTaskQualityDetails,
+                          at : currentDate
                         }
                   },
                 { returnOriginal: false }
@@ -301,6 +296,72 @@ async function updateTaskStatus(companyUrl ,fmsTaskId, formStepsAnswers,fmsTaskQ
         console.error('Error:', error);
     } finally {
         await client.close();
+    }
+}
+
+async function updateAndCountDocuments(companyUrl , fmsQAId , fmsMasterId) {
+
+    //update the fms to false
+    try {
+        const client = await MongoClient.connect(process.env.MONGO_DB_STRING);
+        await client.connect();
+        const db = client.db(companyUrl);
+        const collection = db.collection('fms');
+        
+            // Update a document based on fmsQAId
+            await collection.updateOne(
+                { fmsQAId: fmsQAId },
+                { $set: { fmsQAisLive: false } }
+            );
+            await client.close();
+        } catch (error) {
+            console.error("Error:", error);
+            
+        }
+
+        //find  no of fms flows that are still active for that master id
+        let count;
+        try {
+            const client = await MongoClient.connect(process.env.MONGO_DB_STRING);
+            await client.connect();
+            const db = client.db(companyUrl);
+            const collection = db.collection('fms');
+        
+        
+            // Define the query for counting documents
+            const query = {
+                fmsMasterId: fmsMasterId,
+                fmsQAisLive: true
+            };
+        
+            // Count documents matching the query
+            count = await collection.countDocuments(query);
+            console.log('NO OF FMS THAT ARE LIVE ' , count);
+            await client.close();
+        } catch (error) {
+            console.error("Error:", error);
+            
+        }
+
+        //update in fmsMaster the total no of fms's flow that are still active
+        try {
+            const client = await MongoClient.connect(process.env.MONGO_DB_STRING);
+            await client.connect();
+            const db = client.db(companyUrl);
+            const collection = db.collection('fmsMaster');
+       
+        const updateResult = await collection.updateOne(
+            { fmsMasterId: fmsMasterId }, // Use the document's _id to find and update
+            { $set: { noOfLive: count } }
+        );
+
+        console.log(`${updateResult.matchedCount} document(s) matched the filter, updated ${updateResult.modifiedCount} document(s) in the 'fmsMaster' collection.`);
+        
+        await client.close();
+        return count;
+    } catch (error) {
+        console.error("Error:", error);
+        return error
     }
 }
 

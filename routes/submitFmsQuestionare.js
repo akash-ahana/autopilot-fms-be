@@ -7,64 +7,6 @@ const { CurrentIST, addHrs, addDays , addDaysToADate , formatDateFromDateObjectT
 const moment = require('moment');
 
 
-
-//currentTime - is the questionare submitted Time
-//timeIst - time in hrs "duration" - fmsSteps.Duration
-//Function To Clcuate Planned Completion Time
-// function calculatePlannedCompletionTime(currentTimeIST, duration, shiftStartTime, shiftEndTime, holidayNonWorkingDays) {
-    
-//     console.log('Recieved currentTimeIST in the function' , currentTimeIST)
-//     console.log('Recieved duration in the function' , duration)
-//     console.log('Recieved shiftStartTime in the function' , shiftStartTime)
-//     console.log('Recieved shiftEndTime in the function' , shiftEndTime)
-//     console.log('Recieved nonWorkingDays in the function' , holidayNonWorkingDays)
-//     let endTime = new Date(currentTimeIST);
-//     let hoursToAdd = duration;
-
-//     const shiftStart = new Date(currentTimeIST);
-//     shiftStart.setHours(...shiftStartTime.split(':'), 0, 0);
-
-//     const shiftEnd = new Date(currentTimeIST);
-//     shiftEnd.setHours(...shiftEndTime.split(':'), 0, 0);
-
-//     while (hoursToAdd > 0) {
-//         // If current time is before shift start, set current time to shift start
-//         if (endTime < shiftStart) {
-//             endTime = shiftStart;
-//         }
-
-//         // If adding hours exceeds the shift end, calculate remaining hours for the next day
-//         if (endTime.getTime() + hoursToAdd * 60 * 60 * 1000 > shiftEnd.getTime()) {
-//             const remainingHours = (shiftEnd.getTime() - endTime.getTime()) / (60 * 60 * 1000);
-//             hoursToAdd -= remainingHours;
-//             endTime.setDate(endTime.getDate() + 1); // Move to the next day
-
-//             // Check if the next date is a holiday or non-working day
-//             while (holidayNonWorkingDays.includes(formatDate(endTime))) {
-//                 endTime.setDate(endTime.getDate() + 1); // Move to the next day
-//             }
-
-//             endTime.setHours(...shiftStartTime.split(':'), 0, 0); // Set start time to shift start of the next day
-//         }
-//         else {
-//             endTime = new Date(endTime.getTime() + hoursToAdd * 60 * 60 * 1000);
-//             hoursToAdd = 0;
-//         }
-//     }
-
-//     return endTime;
-// }
-
-// // Format date as 'YYYY-MM-DD'
-// function formatDate(date) {    
-//     return date.toISOString().split('T')[0];
-// }
-
-
-
-
-
-
 submitFmsQuestionare.post('/submitFmsUserQAcreateTaskStep1', async (req, res) => {
     console.log("inside fms fmsUserQA create task for step 1")
     
@@ -95,7 +37,7 @@ submitFmsQuestionare.post('/submitFmsUserQAcreateTaskStep1', async (req, res) =>
         userEmail = response.data.email_id;
     } catch (error) {
         console.error('Error posting data:', error);
-        res.status(500).send({ message: 'Error fetching user details', status: 500 });
+         res.status(500).send({ error: 'Error fetching user details', status: 500 });
         return;
     }
 
@@ -135,7 +77,7 @@ submitFmsQuestionare.post('/submitFmsUserQAcreateTaskStep1', async (req, res) =>
 
     } catch (error) {
         console.error('Error posting data:', error);
-        res.status(500).send({ message: 'Error Submitting QA', status: 500 });
+         res.status(500).send({ error: 'Error Submitting QA', status: 500 });
         return;
     }
 
@@ -144,7 +86,7 @@ submitFmsQuestionare.post('/submitFmsUserQAcreateTaskStep1', async (req, res) =>
 
         // Connect to MongoDB and perform operations
         const client = await MongoClient.connect(process.env.MONGO_DB_STRING);
-        console.log('Connected to database');
+        //console.log('Connected to database');
         const db = client.db(companyUrl);
         const collection = db.collection('fmsMaster');
 
@@ -155,22 +97,25 @@ submitFmsQuestionare.post('/submitFmsUserQAcreateTaskStep1', async (req, res) =>
             { returnOriginal: false } // Options (returnOriginal: false means return the modified document)
         );
 
-        console.log(result);
+        //console.log(result);
 
         // Close the MongoDB connection
         await client.close();
-        console.log('MongoDB connection closed');
+        //console.log('MongoDB connection closed');
 
     } catch (error) {
         console.error('Error posting data:', error);
-        res.status(500).send({ message: 'Error Submitting QA', status: 500 });
+         res.status(500).send({ error: 'Error Submitting QA', status: 500 });
         return;
     }
 
     console.log('QA is submitted and fmsMaster is also incremented')
 
 
-    //////////////////////////////////try catch block to find all the detials required for Task Creation 
+    //////////////////////////////////try catch block to find all the detials required for Task Creation
+    //try block to fetch the next task
+    let shouldcreateNextTask;
+    let nextTask; 
     let employee;
     let processId;
     let plannedDate;
@@ -218,51 +163,60 @@ submitFmsQuestionare.post('/submitFmsUserQAcreateTaskStep1', async (req, res) =>
             return;
         }
 
-        // Extract the first employee's information from the "employees" array
-        employee = whoObject.who.employees[0];
-        processId = document.fmsProcess
-        fmsSteps = document.fmsSteps[0]
-        plannedDate = document.fmsSteps[0].plannedDate
-        what = document.fmsSteps[0].what
-        how = document.fmsSteps[0].how
-        stepId = document.fmsSteps[0].id
-        stepType = document.fmsSteps[0].stepType
-        duration = document.fmsSteps[0].plannedDate.duration
-        durationType = document.fmsSteps[0].plannedDate.durationType
-        isWhatsAppEnabled = document.fmsSteps[0].isWhatsAppEnabled
-        whatsappData = document.fmsSteps[0].whatsappData
-        
-        //fetch working only when durationType is hrs else set it to null
-        if(durationType == "hrs") {
-            working = document.fmsSteps[0].plannedDate.working
+        //console.log('stepId IS ' , req.body.stepId)
+        console.log('no of steps in that fms' , document.fmsSteps.length)
+        if(document.fmsSteps.length >= 1) {
+            // WE SHOULD CREATE THE NEXT TASK AS THIS IS NOT THE LAST STEP IN THE FMS
+            console.log('THERE ARE OTHER STEPS')
+            shouldcreateNextTask = true
+
+            // Extract the first employee's information from the "employees" array
+            employee = whoObject.who.employees[0];
+            processId = document.fmsProcess
+            plannedDate = document.fmsSteps[0].plannedDate
+            what = document.fmsSteps[0].what
+            how = document.fmsSteps[0].how
+            stepId = document.fmsSteps[0].id
+            stepType = document.fmsSteps[0].stepType   //DOER OR QUALITY
+            duration = document.fmsSteps[0].plannedDate.duration
+            durationType = document.fmsSteps[0].plannedDate.durationType
+            //fetch working only when durationType is hrs else set it to null
+            if (durationType == "hrs") {
+                working = document.fmsSteps[0].plannedDate.working
+            } else {
+                working = null
+            }
+            isWhatsAppEnabled = document.fmsSteps[0].isWhatsAppEnabled
+            whatsappData = document.fmsSteps[0].whatsappData
+            fmsSteps = document.fmsSteps
         } else {
-            working = null
+            //WE SHOULD NOT CREATE THE NEXT TASK AS THIS IS THE LAST STEP IN THE FMS
+            shouldcreateNextTask = false
+            console.log('THIS IS THE LAST STEP')
+            updateAndCountDocuments(companyUrl , req.body.fmsQAId , req.body.fmsMasterId);
         }
 
-
-        console.log(`Process ID: ${document.fmsProcess}`);
-
-        // Log the employee information
-        console.log(employee);
-        // Close the MongoDB connection
         await client.close();
         console.log('MongoDB connection closed');
 
     } catch (error) {
         console.error('Error posting data:', error);
-        res.status(500).send({ message: 'Error Submitting QA', status: 500 });
+        res.status(500).send({ message: 'Error Fetching Details Required to Create Next Task', status: 500 });
         return;
     }
 
 
 
+     //try catch block to create next Task
+        // create nex ttask only if it is not the last step in the FMS
+        console.log('Creating the next task if ' , shouldcreateNextTask)
+        if(shouldcreateNextTask) {
     /////////////////////////////////////creating the task for the user in fmsTasks collection
     let plannedCompletionTime;
     let plannedCompletionTimeIST
     try {
 
         //calculation of fmsTaskPlannedCompletionTime (start time - form submitted time, and tat in hrs or days)
-
         // Connect to MongoDB and perform operations
         const client = await MongoClient.connect(process.env.MONGO_DB_STRING);
         console.log('Connected to database');
@@ -277,36 +231,8 @@ submitFmsQuestionare.post('/submitFmsUserQAcreateTaskStep1', async (req, res) =>
             fmsTaskId = lastDocument[0].fmsTaskId + 1;
         }
 
-        function getDateFromIso(isoString) {
-            // Create a Date object from the ISO string
-            let date = new Date(isoString);
-
-            // Reformat the date to only include the year, month, and day
-            let formattedDate = date.toISOString().split('T')[0];
-
-            return formattedDate;
-        }
+       
         //Calculate Fms Planned Completion Time
-      
-        // async function handleTaskDurationAndLocation(durationType, working, duration, companyUrl) {
-        //     if (durationType === "hrs") {
-        //         console.log('if task is in hrs');
-        //         if (working === "OUTSIDE") {
-        //             console.log('if time is 24hr - OUTSIDE');
-        //             plannedCompletionTime = addHrs(CurrentIST(), duration);
-        //         } else {
-        //             console.log('if time is during office hrs - INSIDE');
-        //             const response = await axios.post(process.env.MAIN_BE_WORKING_SHIFT_URL, { verify_company_url: companyUrl });
-        //             let shiftEndTime = response.data.result[0].shiftEndTime;
-        //             let shiftEndTimeDateFormat = getCurrentDateInIST(shiftEndTime);
-        //             plannedCompletionTime = addHrs(CurrentIST(), duration);
-        
-        //             let balanceTime = calculateBalanceHours(plannedCompletionTime, shiftEndTimeDateFormat);
-        //             console.log(balanceTime);
-        //         }
-        //     }
-        // }
-
         if (durationType == "hrs") {
             if (working == "OUTSIDE") {
                 plannedCompletionTime = addHrs(CurrentIST(), duration);
@@ -346,16 +272,29 @@ submitFmsQuestionare.post('/submitFmsUserQAcreateTaskStep1', async (req, res) =>
                             let overflowforThatDayIs = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
 
                             const nextDayStartTime = new Date(shiftStartTime);
-                          
-                            plannedCompletionTime.setHours(nextDayStartTime.getHours() + hours);
-                            plannedCompletionTime.setMinutes(nextDayStartTime.getMinutes() + minutes);
-                            plannedCompletionTime.setSeconds(nextDayStartTime.getSeconds() + seconds);
 
-                            console.log('Final planned completion time (before adding offset):', plannedCompletionTime);
+                            let nextDayCompletionTime = plannedCompletionTime;
 
-                            plannedCompletionTime.setDate(plannedCompletionTime.getDate() + 1);
-                        
-                            plannedCompletionTimeIST = moment(plannedCompletionTime).tz('Asia/Kolkata');
+                            nextDayCompletionTime.setHours(nextDayStartTime.getHours());
+                            nextDayCompletionTime.setMinutes(nextDayStartTime.getMinutes());
+                            nextDayCompletionTime.setSeconds(nextDayStartTime.getSeconds());
+                            nextDayCompletionTime.setDate(plannedCompletionTime.getDate() + 1);
+                    
+                            nextDayCompletionTime.setHours(nextDayCompletionTime.getHours() + hours);
+                            nextDayCompletionTime.setMinutes(nextDayCompletionTime.getMinutes() + minutes);
+                            nextDayCompletionTime.setSeconds(nextDayCompletionTime.getSeconds() + seconds);
+
+                            ///////////////////////////////////////////////////
+
+                            // plannedCompletionTime.setHours(nextDayStartTime.getHours() + hours);
+                            // plannedCompletionTime.setMinutes(nextDayStartTime.getMinutes() + minutes);
+                            // plannedCompletionTime.setSeconds(nextDayStartTime.getSeconds() + seconds);
+
+                            console.log('Final planned completion time (before adding offset):', nextDayCompletionTime);
+
+                            // plannedCompletionTime.setDate(plannedCompletionTime.getDate() + 1);
+
+                            plannedCompletionTimeIST = moment(nextDayCompletionTime).tz('Asia/Kolkata');
 
                             // Subtract 5 hours and 30 minutes from plannedCompletionTimeIST
                             plannedCompletionTimeIST = plannedCompletionTimeIST.subtract(5, 'hours').subtract(30, 'minutes').format();
@@ -364,15 +303,27 @@ submitFmsQuestionare.post('/submitFmsUserQAcreateTaskStep1', async (req, res) =>
 
 
                             return plannedCompletionTimeIST;
-                        } else {
-                            return 0;
+                        } else if (plannedCompletionTime < shiftEndTime) {
+                            console.log("plannedTimeDate check here", plannedCompletionTime);
+                            plannedCompletionTimeIST = plannedCompletionTime;
+                            plannedCompletionTimeIST = moment(plannedCompletionTimeIST).tz('Asia/Kolkata');
+                            plannedCompletionTimeIST = plannedCompletionTimeIST.subtract(5, 'hours').subtract(30, 'minutes').format();
+                            console.log("plannedComplotiontimeIST check here", plannedCompletionTimeIST);
+                            return plannedCompletionTimeIST;
                         }
                     }
 
                     let balanceTime = calculateBalanceHours(plannedTimeDate, shiftEndTimeDate);
                     console.log('Balance time:', balanceTime);
 
-                    plannedCompletionTimeIST = await validateHolidayforHRS(plannedCompletionTimeIST);
+
+                    if (plannedTimeDate > shiftEndTime) {
+                        // Perform holiday validation only if planned completion time exceeds shift end time
+                        plannedCompletionTimeIST = await validateHolidayforHRS(plannedCompletionTimeIST);
+                        console.log('Planned completion time after holiday validation:', plannedCompletionTimeIST);
+                    }
+
+                    // plannedCompletionTimeIST = await validateHolidayforHRS(plannedCompletionTimeIST);
 
                     // Here you can handle the case when balanceTime is not 0, if needed
 
@@ -384,16 +335,26 @@ submitFmsQuestionare.post('/submitFmsUserQAcreateTaskStep1', async (req, res) =>
                 }
             }
         } else {
-            plannedCompletionTime = addDays(CurrentIST(), duration);
+
+            const currentDateTimeFinalString = moment().tz('Asia/Kolkata').format();
+            console.log("first step", currentDateTimeFinalString);
+            const currentDateTimeFinal = moment.tz(currentDateTimeFinalString, 'Asia/Kolkata').toDate();
+
+            console.log("currenDae", currentDateTimeFinal);
+            currentDateTimeFinal.setHours(currentDateTimeFinal.getHours() + 5);
+            currentDateTimeFinal.setMinutes(currentDateTimeFinal.getMinutes() + 30);
+
+            console.log("date check", currentDateTimeFinal);
+            plannedCompletionTime = currentDateTimeFinal;
             console.log("plannedCompletionTiem for days", plannedCompletionTime);
-            plannedCompletionTime = await validateHoliday(plannedCompletionTime);
+            plannedCompletionTime = await validateHoliday(plannedCompletionTime, duration);
             plannedCompletionTimeIST = plannedCompletionTime;
         }
 
         console.log("Final Planned Completion Time:", plannedCompletionTimeIST);
 
-       
-        
+
+
         async function validateHolidayforHRS(plannedCompletionTime) {
             try {
                 console.log("inside get next working day, holiday validation input is ", plannedCompletionTime)
@@ -410,17 +371,17 @@ submitFmsQuestionare.post('/submitFmsUserQAcreateTaskStep1', async (req, res) =>
 
                 // Fetching non-working days from the backend
                 const responseHoliday = await axios.post(process.env.MAIN_BE_HOLIDAY_NONWORKINGDAY_URL, { verify_company_url: companyUrl });//output like this  -> responseHoliday = ['2024-01-07', '2024-01-14']
-                
-                
-               // const datesArrayAsObjects1 = responseHoliday.data.map(dateString => new Date(dateString));
-                
+
+
+                // const datesArrayAsObjects1 = responseHoliday.data.map(dateString => new Date(dateString));
+
                 const datesArrayAsObjects = responseHoliday.data.map(dateString => {
                     let utcDate = new Date(dateString);
                     utcDate.setDate(utcDate.getDate() + 1); // Add one day
                     let istDate = moment(utcDate).tz('Asia/Kolkata').toDate(); // Convert to IST
                     return istDate;
                 });
-                
+
                 //console.log('responseHoliday.data', responseHoliday.data)        //output like this  -> responseHoliday.data = [2024-01-07T00:00:00.000Z, 2024-01-14T00:00:00.000Z]
 
                 // Function to group consecutive dates into arrays
@@ -443,12 +404,12 @@ submitFmsQuestionare.post('/submitFmsUserQAcreateTaskStep1', async (req, res) =>
                 }
 
                 // console.log("datesArrayAsObjects", datesArrayAsObjects);
-                
+
                 console.log("datesArrayAsObjects1", datesArrayAsObjects);
                 const consecutiveArrays = groupConsecutiveDates(datesArrayAsObjects);
-                              //console.log("consecutiveArrays" , consecutiveArrays)
+                //console.log("consecutiveArrays" , consecutiveArrays)
 
-                              console.log("consecutive", consecutiveArrays);
+                console.log("consecutive", consecutiveArrays);
 
                 //const inputDate = new Date("2024-05-18");
                 const inputDate = new Date(inputDateString.trim());
@@ -478,7 +439,7 @@ submitFmsQuestionare.post('/submitFmsUserQAcreateTaskStep1', async (req, res) =>
                     console.log("Input date belongs to element:", belongsToElement);
                     let dateBelongsTo = consecutiveArrays[belongsToElement]
 
-    
+
                     console.log(dateBelongsTo)
                     //next working date is 
                     let lastElementinTheArray = dateBelongsTo[dateBelongsTo.length - 1]
@@ -518,123 +479,74 @@ submitFmsQuestionare.post('/submitFmsUserQAcreateTaskStep1', async (req, res) =>
             }
         }
 
-        async function validateHoliday(plannedCompletionTime) {
+        async function validateHoliday(plannedCompletionTime, duration) {
             try {
-                console.log("inside get next working day, holiday validation input is ", plannedCompletionTime)
-                console.log("plannedCompletionTime", typeof plannedCompletionTime)
+                console.log("inside get next working day, holiday validation input is ", plannedCompletionTime);
+                console.log("plannedCompletionTime", typeof plannedCompletionTime);
 
-                // Split the string using "T" as the separator
-                let parts = plannedCompletionTime.split("T");
-                let inputDateString = parts[0].trim();
-                let inputTimeString = parts[1].trim();
+                let inputDateString, inputTimeString;
 
-                console.log("inputDateString", inputDateString)
-                console.log("inputTimeString", inputTimeString)
+                if (typeof plannedCompletionTime === 'string') {
+                    // Split the string using "T" as the separator
+                    let parts = plannedCompletionTime.split("T");
+                    inputDateString = parts[0].trim();
+                    inputTimeString = parts[1].trim();
+                } else if (plannedCompletionTime instanceof Date) {
+                    inputDateString = plannedCompletionTime.toISOString().split("T")[0];
+                    inputTimeString = plannedCompletionTime.toISOString().split("T")[1];
+                } else {
+                    throw new Error("Invalid plannedCompletionTime format");
+                }
 
+                console.log("inputDateString", inputDateString);
+                console.log("inputTimeString", inputTimeString);
 
                 // Fetching non-working days from the backend
-                const responseHoliday = await axios.post(process.env.MAIN_BE_HOLIDAY_NONWORKINGDAY_URL, { verify_company_url: companyUrl });//output like this  -> responseHoliday = ['2024-01-07', '2024-01-14']
-                
-                
-                const datesArrayAsObjects1 = responseHoliday.data.map(dateString => new Date(dateString));
-                
-                // const datesArrayAsObjects1 = responseHoliday.data.map(dateString => {
-                //     let utcDate = new Date(dateString);
-                //     utcDate.setDate(utcDate.getDate() + 1); // Add one day
-                //     let istDate = moment(utcDate).tz('Asia/Kolkata').toDate(); // Convert to IST
-                //     return istDate;
-                // });
-                
-                //console.log('responseHoliday.data', responseHoliday.data)        //output like this  -> responseHoliday.data = [2024-01-07T00:00:00.000Z, 2024-01-14T00:00:00.000Z]
+                const responseHoliday = await axios.post(process.env.MAIN_BE_HOLIDAY_NONWORKINGDAY_URL, { verify_company_url: companyUrl });
+                // Convert holiday dates to IST
+                const holidays = responseHoliday.data.map(dateString => {
+                    let utcDate = new Date(dateString);
+                    utcDate.setDate(utcDate.getDate() + 1); // Add one day
+                    let istDate = moment(utcDate).tz('Asia/Kolkata').startOf('day').toDate(); // Convert to IST and normalize to start of the day
+                    return istDate;
+                }).map(date => date.toISOString().split('T')[0]); // Keep only the date part
 
-                // Function to group consecutive dates into arrays
-                function groupConsecutiveDates(dates) {
-                    dates.sort((a, b) => a - b); // Sort the dates in ascending order
-                    const result = [];
-                    let tempArray = [dates[0]];
+                console.log("holidays in IST", holidays);
 
-                    for (let i = 1; i < dates.length; i++) {
-                        const diff = (dates[i] - dates[i - 1]) / (1000 * 60 * 60 * 24);
-                        if (diff === 1) {
-                            tempArray.push(dates[i]);
-                        } else {
-                            result.push(tempArray);
-                            tempArray = [dates[i]];
-                        }
-                    }
-                    result.push(tempArray);
-                    return result;
+                function isHoliday(date) {
+                    let dateString = date.toISOString().split('T')[0]; // Keep only the date part
+                    return holidays.includes(dateString);
                 }
 
-                // console.log("datesArrayAsObjects", datesArrayAsObjects);
-                
-                console.log("datesArrayAsObjects1", datesArrayAsObjects1);
-                const consecutiveArrays = groupConsecutiveDates(datesArrayAsObjects1);
-                              //console.log("consecutiveArrays" , consecutiveArrays)
+                let currentDate = new Date(inputDateString);
 
-                              console.log("consecutive", consecutiveArrays);
-
-                //const inputDate = new Date("2024-05-18");
-                const inputDate = new Date(inputDateString.trim());
-                // Function to check if a date falls within a given range of dates
-                function isDateInRange(date, startDate, endDate) {
-                    //console.log('checking if the inputdate is a holiday')
-                    console.log(date >= startDate && date <= endDate)
-                    return date >= startDate && date <= endDate;
+                // Adjust initial planned completion time if it falls on a holiday
+                while (isHoliday(currentDate)) {
+                    currentDate.setDate(currentDate.getDate() + 1);
                 }
 
-                let belongsToElement = -1; // Default value if the input date doesn't belong to any array
+                let totalDaysAdded = 0;
 
-                for (let i = 0; i < consecutiveArrays.length; i++) {
-                    const dateArray = consecutiveArrays[i];
-                    const startDate = dateArray[0];
-                    const endDate = dateArray[dateArray.length - 1];
-
-                    if (isDateInRange(inputDate, startDate, endDate)) {
-                        belongsToElement = i;
-                        break;
+                // Adjust planned completion time to account for holidays
+                while (totalDaysAdded < duration) {
+                    currentDate.setDate(currentDate.getDate() + 1);
+                    if (!isHoliday(currentDate)) {
+                        totalDaysAdded++;
                     }
                 }
 
-                console.log('inputDate', inputDate, belongsToElement, 'element ', 'which is a holiday')
+                let finalDate = new Date(currentDate.toISOString().split('T')[0] + "T" + inputTimeString);
+                let finalMoment = moment.tz(finalDate, 'Asia/Kolkata');
+                finalMoment = finalMoment.subtract(5, 'hours').subtract(30, 'minutes'); // Adjust to UTC if needed
 
-                if (belongsToElement >= 0) {
-                    console.log("Input date belongs to element:", belongsToElement);
-                    let dateBelongsTo = consecutiveArrays[belongsToElement]
+                let formattedFinalDate = finalMoment.format();
 
-    
-                    console.log(dateBelongsTo)
-                    //next working date is 
-                    let lastElementinTheArray = dateBelongsTo[dateBelongsTo.length - 1]
-                    console.log(lastElementinTheArray)
-
-                    //next working date is 
-                    //let nextWorkingDay = new Date(lastElementinTheArray.setDate(lastElementinTheArray.getDate() + 1));
-                    let nextWorkingDay = new Date(lastElementinTheArray.getTime());
-                    nextWorkingDay.setDate(nextWorkingDay.getDate() + 1);
-                    let nextWorkingDayString = formatDateFromDateObjectToString(nextWorkingDay)
-                    console.log("nextWorkingDayString", nextWorkingDayString)
+                console.log("final planned completion date after holiday adjustment", formattedFinalDate);
 
 
-                    let finalNextWorkingDay = nextWorkingDayString + "T" + inputTimeString;
-                    console.log("finalNextWorkingDay", finalNextWorkingDay)
+                console.log("final planned completion date after holiday adjustment", formattedFinalDate);
 
-                    //split to remove timeZone
-
-                    var finalNextWorkingDaydateObject = new Date(finalNextWorkingDay);
-                    console.log(finalNextWorkingDaydateObject);
-
-
-                    // Convert the Date object to IST using Moment Timezone
-                    var istfinalNextWorkingDaydateObject = moment.tz(finalNextWorkingDaydateObject, 'Asia/Kolkata');
-                    // Format the IST date as needed
-                    var formattedIstDate = istfinalNextWorkingDaydateObject.format();
-                    console.log("formattedIstDate", formattedIstDate);
-
-                    return formattedIstDate;
-                } else {
-                    return plannedCompletionTime
-                }
+                return formattedFinalDate;
 
             } catch (error) {
                 console.error("Failed to fetch holidays:", error);
@@ -676,48 +588,64 @@ submitFmsQuestionare.post('/submitFmsUserQAcreateTaskStep1', async (req, res) =>
 
         console.log(result);
         console.log('Created the Task');
-        // res.json({
-        //     "message": `${req.body.fmsName} Step 1 is Successfully Created`,
-        //     "status": 200
-        // });
-
-        //send Whatsapp message to the user
-        // const sendWhatsapp = await axios.post(`${process.env.MAIN_BE_WHATSAPP_URL}`, {
-        //     verify_company_url: companyUrl,
-        //     isWhatsAppEnabled : isWhatsAppEnabled, 
-        //     whatsappData : whatsappData
-        // })
-
+        
         // Close the MongoDB connection
         await client.close();
         console.log('MongoDB connection closed');
 
     } catch (error) {
         console.error('Error posting data:', error);
-        res.status(500).send({ message: 'Error Submitting QA', status: 500 });
+        res.status(500).send({ message: 'Error Creaating New Task For A User', status: 500 });
         return;
     }
 
+}
 
-    //-------------------------Triggr Whatsapp Messages---------------------------------------//
-    console.log('trigger Whatsapp messages')
-    console.log(fmsSteps)
-    // const lastFmsStep = fmsSteps[fmsSteps.length - 1];
-    try {
-        const sendWhatsapp = await axios.post(process.env.MAIN_BE_WHATSAPP_URL, {
-        verify_company_url: companyUrl,
-        fmsSteps: fmsSteps
-        });
-        console.log('WhatsApp message sent', sendWhatsapp.data);
-    } catch (whatsappError) {
-        console.error('Error sending WhatsApp message:', whatsappError);
-    }
 
-    const currentDate = moment().tz('Asia/Kolkata').format();
+    // //-------------------------Triggr Whatsapp Messages---------------------------------------//
+    // console.log('trigger Whatsapp messages')
+    // console.log(fmsSteps)
+    // // const lastFmsStep = fmsSteps[fmsSteps.length - 1];
+    // try {
+    //     const sendWhatsapp = await axios.post(process.env.MAIN_BE_WHATSAPP_URL, {
+    //     verify_company_url: companyUrl,
+    //     fmsSteps: fmsSteps
+    //     });
+    //     console.log('WhatsApp message sent', sendWhatsapp.data);
+    // } catch (whatsappError) {
+    //     console.error('Error sending WhatsApp message:', whatsappError);
+    // }
+
+     //-------------------------Triggr Whatsapp Messages---------------------------------------//
+     console.log('trigger Whatsapp messages')
+       
+     if (Array.isArray(fmsSteps) && fmsSteps.length > 0) {
+         const lastFmsStep = fmsSteps[fmsSteps.length - 1];
+         const whatsappData = lastFmsStep.whatsappData; 
+     
+         console.log('Last fmsStep:', lastFmsStep);
+         console.log('WhatsApp data to send:', whatsappData);
+     
+         try {
+             const sendWhatsapp = await axios.post(process.env.MAIN_BE_WHATSAPP_URL, {
+                 verify_company_url: companyUrl,
+                 fmsSteps: lastFmsStep,
+                 whatsappData: whatsappData // Include whatsappData if needed
+             });
+             console.log('WhatsApp message sent', sendWhatsapp.data);
+         } catch (whatsappError) {
+             console.error('Error sending WhatsApp message:', whatsappError);
+         }
+     } else {
+         console.error('fmsSteps is not an array or is empty');
+     }
+
+    
 
     //-------------------------Triggr Android Notification---------------------------------------//
      ///sending android notification data
      console.log('sending android notification')
+     const currentDate = moment().tz('Asia/Kolkata').format();
         // try {
         //     const sendAndroidNotification = await axios.post(process.env.MAIN_ANDROID_NOTIFICATION, {
         //     verify_company_url: companyUrl,
@@ -743,6 +671,72 @@ submitFmsQuestionare.post('/submitFmsUserQAcreateTaskStep1', async (req, res) =>
 })
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+async function updateAndCountDocuments(companyUrl , fmsQAId , fmsMasterId) {
+
+    //update the fms to false
+    try {
+        const client = await MongoClient.connect(process.env.MONGO_DB_STRING);
+        await client.connect();
+        const db = client.db(companyUrl);
+        const collection = db.collection('fms');
+        
+            // Update a document based on fmsQAId
+            await collection.updateOne(
+                { fmsQAId: fmsQAId },
+                { $set: { fmsQAisLive: false } }
+            );
+            await client.close();
+        } catch (error) {
+            console.error("Error:", error);
+            
+        }
+
+        //find  no of fms flows that are still active for that master id
+        let count;
+        try {
+            const client = await MongoClient.connect(process.env.MONGO_DB_STRING);
+            await client.connect();
+            const db = client.db(companyUrl);
+            const collection = db.collection('fms');
+        
+        
+            // Define the query for counting documents
+            const query = {
+                fmsMasterId: fmsMasterId,
+                fmsQAisLive: true
+            };
+        
+            // Count documents matching the query
+            count = await collection.countDocuments(query);
+            console.log('NO OF FMS THAT ARE LIVE ' , count);
+            await client.close();
+        } catch (error) {
+            console.error("Error:", error);
+            
+        }
+
+        //update in fmsMaster the total no of fms's flow that are still active
+        try {
+            const client = await MongoClient.connect(process.env.MONGO_DB_STRING);
+            await client.connect();
+            const db = client.db(companyUrl);
+            const collection = db.collection('fmsMaster');
+       
+        const updateResult = await collection.updateOne(
+            { fmsMasterId: fmsMasterId }, // Use the document's _id to find and update
+            { $set: { noOfLive: count } }
+        );
+
+        console.log(`${updateResult.matchedCount} document(s) matched the filter, updated ${updateResult.modifiedCount} document(s) in the 'fmsMaster' collection.`);
+        
+        await client.close();
+        return count;
+    } catch (error) {
+        console.error("Error:", error);
+        return error
+    }
+}
 
 
 

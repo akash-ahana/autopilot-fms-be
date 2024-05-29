@@ -9,6 +9,7 @@ getfilterAdmin.get('/getfilterAdmin', async (req, res) => {
   let companyUrl = "";
   let userEmail = "";
 
+  // Check for authorization header
   const authHeader = req.headers.authorization;
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
     console.log("Error: Authorization header missing or malformed");
@@ -31,6 +32,14 @@ getfilterAdmin.get('/getfilterAdmin', async (req, res) => {
     return res.status(500).json({ message: "Error fetching user details", status: 500 });
   }
 
+  // Extract query parameters from request query
+  let { status, processId, employeeId, select_date, week_no } = req.query;
+
+  // Only convert status to uppercase if it is defined
+if (status!== undefined) {
+  status = status.toUpperCase();
+}
+  
   try {
     // Connect to MongoDB
     const client = await MongoClient.connect(process.env.MONGO_DB_STRING, { useNewUrlParser: true, useUnifiedTopology: true });
@@ -38,18 +47,17 @@ getfilterAdmin.get('/getfilterAdmin', async (req, res) => {
     const db = client.db(companyUrl);
     const collection = db.collection("fmsTasks");
 
-    const { status, employeeId, processId, select_date, week_no } = req.body;
-
     // Log the specific fields to debug
     console.log("fmsTaskStatus:", status);
-    console.log("employeeId:", employeeId);
+    console.log("processId:", processId);
+    console.log("fmsTaskPlannedCompletionTime:", select_date);
+    console.log("week_number:", week_no);
 
     // Construct the query object dynamically based on the presence of fields
     const query = {};
-
     if (status) query.fmsTaskStatus = status;
-    if (employeeId) query['fmsTaskDoer.employeeId'] = employeeId;
-    if (processId) query['fmsProcessID.processId'] = processId;
+    if (processId) query['fmsProcessID.processId'] = parseInt(processId, 10);
+    if (employeeId) query['fmsTaskDoer.employeeId'] = parseInt(employeeId, 10);
 
     if (select_date) {
       const startOfDay = new Date(select_date);
@@ -65,7 +73,7 @@ getfilterAdmin.get('/getfilterAdmin', async (req, res) => {
 
     if (week_no) {
       try {
-        console.log("week_no input:", week_no);
+        console.log("Received week_no:", week_no);
 
         // Fetch company starting day of the week
         const companyStartingDayWeekResponse = await axios.post(process.env.MAIN_BE_STARTDAY_WEEK_URL, {
@@ -73,20 +81,23 @@ getfilterAdmin.get('/getfilterAdmin', async (req, res) => {
         });
 
         const responseResults = companyStartingDayWeekResponse.data.result;
-        console.log(responseResults);
+        console.log("Company Starting Day Week Response Results:", responseResults);
 
         // Find the object that matches the provided week_number
-        const matchingWeek = responseResults.find(week => week.weekNo === week_no);
+        const matchingWeek = responseResults.find(week => week.weekNo === parseInt(week_no, 10));
 
         if (matchingWeek) {
-          const { weekStartingDate } = matchingWeek;
+          const { weekStartingDate, weekStartingDay, weekNo } = matchingWeek;
 
           console.log("Fetched Week Starting Date:", weekStartingDate);
+          console.log("Fetched Week Starting Day:", weekStartingDay);
+          console.log("Fetched Week Number:", weekNo);
+          console.log("Received Week Number:", week_no);
 
           const startOfWeek = new Date(weekStartingDate);
           startOfWeek.setUTCHours(0, 0, 0, 0);
           const endOfWeek = new Date(startOfWeek);
-          endOfWeek.setDate(endOfWeek.getDate() + 7);
+          endOfWeek.setDate(startOfWeek.getDate() + 6); // 6 days after the start date
           endOfWeek.setUTCHours(23, 59, 59, 999);
 
           // Construct the query with the date range
@@ -106,11 +117,15 @@ getfilterAdmin.get('/getfilterAdmin', async (req, res) => {
       }
     }
 
-    // Execute the query
     const taskDocuments = await collection.find(query).toArray();
+
     console.log("Task Documents:", taskDocuments);
 
-    res.status(200).json({ message: taskDocuments, status: 200 });
+    // Send the fetched documents as the response
+    res.status(200).json({
+      message: taskDocuments,
+      status: 200
+    });
 
     // Close the MongoDB connection
     await client.close();

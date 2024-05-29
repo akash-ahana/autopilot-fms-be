@@ -34,7 +34,7 @@ initialiseFms.post('/fmsStep1', async (req, res) => {
         userEmail = response.data.email_id;
     } catch (error) {
         console.error('Error posting data:', error);
-        res.status(500).send({ message: 'Error fetching user details', status: 500 });
+         res.status(500).send({ error: 'Error fetching user details', status: 500 });
         return;
     }
 
@@ -44,6 +44,24 @@ initialiseFms.post('/fmsStep1', async (req, res) => {
         console.log('Connected to database');
         const db = client.db(companyUrl);
         const collection = db.collection('fmsMaster');
+
+         // Convert req.body.fmsName to lowercase and remove spaces
+       const formattedFmsName = req.body.fmsName.toLowerCase().replace(/\s+/g, '');
+ 
+       // Check if fmsName already exists in the collection (case-insensitive, ignoring spaces)
+       const existingDocument = await collection.findOne({
+           $expr: {
+               $eq: [
+                   { $toLower: { $replaceAll: { input: "$fmsName", find: " ", replacement: "" } } },
+                   formattedFmsName
+               ]
+           }
+       });
+ 
+       if (existingDocument) {
+           await client.close();
+           return res.status(400).json({ error: "The FMS Title already exists", status: 400 });
+       }
 
         // Find the last inserted document and get its incremental value
         const lastDocument = await collection.find().sort({ _id: -1 }).limit(1).toArray();
@@ -100,7 +118,7 @@ initialiseFms.post('/fmsStep1', async (req, res) => {
         console.log('MongoDB connection closed');
     } catch (error) {
         console.error('Error Connecting to MongoDB', error);
-        res.status(500).send({ message: ` Step 1 is NOT Created`, status: 500 });
+         res.status(500).send({ error: ` Step 1 is NOT Created`, status: 500 });
     }
 });
 
@@ -136,7 +154,7 @@ initialiseFms.post('/editFmsStep1', async (req, res) => {
       userEmail = response.data.email_id;
   } catch (error) {
       console.error('Error posting data:', error);
-      res.status(500).send({ message: 'Error fetching user details', status: 500 });
+       res.status(500).send({ error: 'Error fetching user details', status: 500 });
       return;
   }
 
@@ -194,7 +212,7 @@ initialiseFms.post('/editFmsStep1', async (req, res) => {
       console.log('MongoDB connection closed');
   } catch (error) {
       console.error('Error Connecting to MongoDB', error);
-      res.status(500).send({ message: ` Step 1 is NOT Edited`, status: 500 });
+       res.status(500).send({ error: ` Step 1 is NOT Edited`, status: 500 });
   }
 });
 
@@ -231,7 +249,7 @@ initialiseFms.post('/addFmsUserAccess' , async (req, res) => {
         userEmail = response.data.email_id;
     } catch (error) {
         console.error('Error posting data:', error);
-        res.status(500).send({ message: 'Error fetching user details', status: 500 });
+         res.status(500).send({ error: 'Error fetching user details', status: 500 });
         return;
     }
 
@@ -268,7 +286,7 @@ initialiseFms.post('/addFmsUserAccess' , async (req, res) => {
             } 
             catch (error) {
                 console.error('Error Connecting to MongoDB', error);
-                res.status(500).send({ message: `${req.body.fmsName} Step 1 is NOT Added`, status: 500 });
+                 res.status(500).send({ error: `${req.body.fmsName} Step 1 is NOT Added`, status: 500 });
             }
 
         
@@ -306,7 +324,7 @@ initialiseFms.post('/createFmsQuestionare' , async (req, res) => {
         userEmail = response.data.email_id;
     } catch (error) {
         console.error('Error posting data:', error);
-        res.status(500).send({ message: 'Error fetching user details', status: 500 });
+         res.status(500).send({ error: 'Error fetching user details', status: 500 });
         return;
     }
     
@@ -346,7 +364,7 @@ initialiseFms.post('/createFmsQuestionare' , async (req, res) => {
     }
     catch (error) {
         console.error('Error Connecting to MongoDB', error);
-        res.status(500).send({ message: `${req.body.fmsName} FMS Questionare is Not Added`, status: 500 });
+         res.status(500).send({ error: `${req.body.fmsName} FMS Questionare is Not Added`, status: 500 });
     }
 })
 
@@ -382,7 +400,7 @@ initialiseFms.post('/createFmsSteps' , async (req, res) => {
         
     } catch (error) {
         console.error('Error posting data:', error);
-        res.status(500).send({ message: 'Error fetching user details', status: 500 });
+         res.status(500).send({ error: 'Error fetching user details', status: 500 });
         return;
     }
 
@@ -434,7 +452,7 @@ initialiseFms.post('/createFmsSteps' , async (req, res) => {
     }
     catch (error) {
         console.error('Error Connecting to MongoDB', error);
-        res.status(500).send({ message: `${req.body.fmsName} FMS Steps is NOT  Added`, status: 500 });
+         res.status(500).send({ error: `${req.body.fmsName} FMS Steps is NOT  Added`, status: 500 });
     }
 
     
@@ -470,7 +488,7 @@ initialiseFms.post('/makeFmsLive' , async (req, res) => {
         userEmail = response.data.email_id;
     } catch (error) {
         console.error('Error posting data:', error);
-        res.status(500).send({ message: 'Error fetching user details', status: 500 });
+         res.status(500).send({ error: 'Error fetching user details', status: 500 });
         return;
     }
 
@@ -510,7 +528,7 @@ initialiseFms.post('/makeFmsLive' , async (req, res) => {
     }
     catch (error) {
         console.error('Error Connecting to MongoDB', error);
-        res.status(500).send({ message: `${req.body.fmsName} FMS Steps is NOT  Added`, status: 500 });
+         res.status(500).send({ error: `${req.body.fmsName} FMS Steps is NOT  Added`, status: 500 });
     }
 
     

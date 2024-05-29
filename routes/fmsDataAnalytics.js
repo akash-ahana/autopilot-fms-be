@@ -26,7 +26,7 @@ fmsdataanalytics.post("/fmsdataanalytics", async (req, res) => {
         const taskDocuments = await collection.find(query).toArray();
         console.log("Task documents", taskDocuments);
 
-        const companyStartingDayWeekResponse = await axios.post(process.env.MAIN_BE_STARTDAY_WEEK_URL, {
+        const companyStartingDayWeekResponse = await axios.post(process.env.MAIN_BE_STARTDAY_WEEK_URL_PERFORMANCE, {
             verify_company_url: companyUrl
         });
 

@@ -188,7 +188,7 @@ submitFmsQuestionare.post('/submitFmsUserQAcreateTaskStep1', async (req, res) =>
             }
             isWhatsAppEnabled = document.fmsSteps[0].isWhatsAppEnabled
             whatsappData = document.fmsSteps[0].whatsappData
-            fmsSteps = document.fmsSteps[0]
+            fmsSteps = document.fmsSteps
         } else {
             //WE SHOULD NOT CREATE THE NEXT TASK AS THIS IS THE LAST STEP IN THE FMS
             shouldcreateNextTask = false
@@ -619,26 +619,26 @@ submitFmsQuestionare.post('/submitFmsUserQAcreateTaskStep1', async (req, res) =>
      //-------------------------Triggr Whatsapp Messages---------------------------------------//
      console.log('trigger Whatsapp messages')
        
-    //  if (Array.isArray(fmsSteps) && fmsSteps.length > 0) {
-    //      const lastFmsStep = fmsSteps[fmsSteps.length - 1];
-    //      const whatsappData = lastFmsStep.whatsappData; 
+     if (Array.isArray(fmsSteps) && fmsSteps.length > 0) {
+         const lastFmsStep = fmsSteps[fmsSteps.length - 1];
+         const whatsappData = lastFmsStep.whatsappData; 
      
-    //      console.log('Last fmsStep:', lastFmsStep);
-    //      console.log('WhatsApp data to send:', whatsappData);
+         console.log('Last fmsStep:', lastFmsStep);
+         console.log('WhatsApp data to send:', whatsappData);
      
-    //      try {
-    //          const sendWhatsapp = await axios.post(process.env.MAIN_BE_WHATSAPP_URL, {
-    //              verify_company_url: companyUrl,
-    //              fmsSteps: lastFmsStep,
-    //              whatsappData: whatsappData // Include whatsappData if needed
-    //          });
-    //          console.log('WhatsApp message sent', sendWhatsapp.data);
-    //      } catch (whatsappError) {
-    //          console.error('Error sending WhatsApp message:', whatsappError);
-    //      }
-    //  } else {
-    //      console.error('fmsSteps is not an array or is empty');
-    //  }
+         try {
+             const sendWhatsapp = await axios.post(process.env.MAIN_BE_WHATSAPP_URL, {
+                 verify_company_url: companyUrl,
+                 fmsSteps: lastFmsStep,
+                 whatsappData: whatsappData // Include whatsappData if needed
+             });
+             console.log('WhatsApp message sent', sendWhatsapp.data);
+         } catch (whatsappError) {
+             console.error('Error sending WhatsApp message:', whatsappError);
+         }
+     } else {
+         console.error('fmsSteps is not an array or is empty');
+     }
 
     
 

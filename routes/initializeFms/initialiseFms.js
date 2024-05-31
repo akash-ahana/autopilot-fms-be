@@ -38,8 +38,8 @@ initialiseFms.post('/fmsStep1', async (req, res) => {
     } catch (error) {
         console.error('Error posting data:', error);
         errorLogger.log("error",`Failed to fetch user details due to ${error.message}`)
-         res.status(500).send({ error: 'Error fetching user details', status: 500 });
-        return;
+         return res.status(500).send({ error: 'Error fetching user details', status: 500 });
+       
     }
 
     try {
@@ -125,7 +125,7 @@ initialiseFms.post('/fmsStep1', async (req, res) => {
     } catch (error) {
         console.error('Error Connecting to MongoDB', error);
         errorLogger.log("error" , `${userName} failed to create step1 due to ${error.message}`);
-         res.status(500).send({ error: ` Step 1 is NOT Created`, status: 500 });
+        return res.status(500).send({ error: error.message, status: 500 });
     }
 });
 
@@ -164,8 +164,8 @@ initialiseFms.post('/editFmsStep1', async (req, res) => {
   } catch (error) {
       console.error('Error posting data:', error);
       errorLogger.log("error",`Failed to fetch user details due to ${error.message}`)
-       res.status(500).send({ error: 'Error fetching user details', status: 500 });
-      return;
+       return res.status(500).send({ error: 'Error fetching user details', status: 500 });
+      
   }
 
   try {
@@ -223,7 +223,7 @@ initialiseFms.post('/editFmsStep1', async (req, res) => {
   } catch (error) {
       console.error('Error Connecting to MongoDB', error);
       errorLogger.log("error" , `${userName} failed to update step1 due to ${error.message}`);
-       res.status(500).send({ error: ` Step 1 is NOT Edited`, status: 500 });
+      return res.status(500).send({ error: error.message, status: 500 });
   }
 });
 
@@ -263,8 +263,8 @@ initialiseFms.post('/addFmsUserAccess' , async (req, res) => {
     } catch (error) {
         console.error('Error posting data:', error);
         errorLogger.log("error",`Failed to fetch user details due to ${error.message}`)
-         res.status(500).send({ error: 'Error fetching user details', status: 500 });
-        return;
+        return res.status(500).send({ error: 'Error fetching user details', status: 500 });
+       
     }
 
             try {
@@ -302,7 +302,7 @@ initialiseFms.post('/addFmsUserAccess' , async (req, res) => {
             catch (error) {
                 console.error('Error Connecting to MongoDB', error);
                 errorLogger.log("error" , `${userName} failed to provide access due to ${error.message}`);
-                 res.status(500).send({ error: `${req.body.fmsName} Step 1 is NOT Added`, status: 500 });
+                return res.status(500).send({ error: error.message, status: 500 });
             }
 
         
@@ -343,8 +343,8 @@ initialiseFms.post('/createFmsQuestionare' , async (req, res) => {
     } catch (error) {
         console.error('Error posting data:', error);
         errorLogger.log("error",`Failed to fetch user details due to ${error.message}`)
-         res.status(500).send({ error: 'Error fetching user details', status: 500 });
-        return;
+        return res.status(500).send({ error: 'Error fetching user details', status: 500 });
+       
     }
     
     try {
@@ -386,7 +386,7 @@ initialiseFms.post('/createFmsQuestionare' , async (req, res) => {
     catch (error) {
         console.error('Error Connecting to MongoDB', error);
         errorLogger.log("error", `${userName} failed to update fms questionries due to ${error.message}`);
-         res.status(500).send({ error: `${req.body.fmsName} FMS Questionare is Not Added`, status: 500 });
+        return res.status(500).send({ error: error.message, status: 500 });
     }
 })
 
@@ -425,8 +425,8 @@ initialiseFms.post('/createFmsSteps' , async (req, res) => {
     } catch (error) {
         console.error('Error posting data:', error);
         errorLogger.log("error",`Failed to fetch user details due to ${error.message}`)
-         res.status(500).send({ error: 'Error fetching user details', status: 500 });
-        return;
+        return res.status(500).send({ error: 'Error fetching user details', status: 500 });
+        
     }
 
     try {
@@ -479,7 +479,7 @@ initialiseFms.post('/createFmsSteps' , async (req, res) => {
     catch (error) {
         console.error('Error Connecting to MongoDB', error);
         errorLogger.log("error", `${userName} failed to create fms steps due to ${error.message}`);
-         res.status(500).send({ error: `${req.body.fmsName} FMS Steps is NOT  Added`, status: 500 });
+        return res.status(500).send({ error: error.message, status: 500 });
     }
 
     
@@ -518,8 +518,8 @@ initialiseFms.post('/makeFmsLive' , async (req, res) => {
     } catch (error) {
         console.error('Error posting data:', error);
         errorLogger.log("error",`Failed to fetch user details due to ${error.message}`)
-         res.status(500).send({ error: 'Error fetching user details', status: 500 });
-        return;
+        return res.status(500).send({ error: 'Error fetching user details', status: 500 });
+       
     }
 
     try {
@@ -560,7 +560,7 @@ initialiseFms.post('/makeFmsLive' , async (req, res) => {
     catch (error) {
         console.error('Error Connecting to MongoDB', error);
         errorLogger.log("error", `${userName} failed to make fms live due to ${error.message}`);
-         res.status(500).send({ error: `${req.body.fmsName} FMS Steps is NOT  Added`, status: 500 });
+        return res.status(500).send({ error: error.message, status: 500 });
     }
 
     

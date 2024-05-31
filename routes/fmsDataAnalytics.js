@@ -120,7 +120,7 @@ fmsdataanalytics.post("/fmsdataanalytics", async (req, res) => {
 
     } catch (error) {
         console.error("Error Connecting to MongoDB", error);
-        res.status(500).send({ message: "Error transferring task", status: 500 });
+       return res.status(500).send({ error: "Error transferring task", status: 500 });
     }
 });
 

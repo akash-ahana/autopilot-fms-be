@@ -37,8 +37,8 @@ submitFmsQuestionare.post('/submitFmsUserQAcreateTaskStep1', async (req, res) =>
         userEmail = response.data.email_id;
     } catch (error) {
         console.error('Error posting data:', error);
-         res.status(500).send({ error: 'Error fetching user details', status: 500 });
-        return;
+        return res.status(500).send({ error: 'Error fetching user details', status: 500 });
+    
     }
 
 
@@ -77,8 +77,8 @@ submitFmsQuestionare.post('/submitFmsUserQAcreateTaskStep1', async (req, res) =>
 
     } catch (error) {
         console.error('Error posting data:', error);
-         res.status(500).send({ error: 'Error Submitting QA', status: 500 });
-        return;
+        return res.status(500).send({ error: 'Error Submitting QA', status: 500 });
+    
     }
 
     //try catch block to increment the live fms no
@@ -105,8 +105,8 @@ submitFmsQuestionare.post('/submitFmsUserQAcreateTaskStep1', async (req, res) =>
 
     } catch (error) {
         console.error('Error posting data:', error);
-         res.status(500).send({ error: 'Error Submitting QA', status: 500 });
-        return;
+        return res.status(500).send({ error:error.message, status: 500 });
+        
     }
 
     console.log('QA is submitted and fmsMaster is also incremented')
@@ -201,8 +201,8 @@ submitFmsQuestionare.post('/submitFmsUserQAcreateTaskStep1', async (req, res) =>
 
     } catch (error) {
         console.error('Error posting data:', error);
-        res.status(500).send({ message: 'Error Fetching Details Required to Create Next Task', status: 500 });
-        return;
+       return res.status(500).send({ error: error.message, status: 500 });
+       // return;
     }
 
 
@@ -330,8 +330,8 @@ submitFmsQuestionare.post('/submitFmsUserQAcreateTaskStep1', async (req, res) =>
                     plannedCompletionTime = plannedTimeDate;
                 } catch (error) {
                     console.error('Error fetching working shift details:', error);
-                    res.status(500).send({ message: 'Error fetching working shift details', status: 500 });
-                    return;
+                   return res.status(500).send({ error:error.message, status: 500 });
+                   // return;
                 }
             }
         } else {
@@ -475,7 +475,8 @@ submitFmsQuestionare.post('/submitFmsUserQAcreateTaskStep1', async (req, res) =>
 
             } catch (error) {
                 console.error("Failed to fetch holidays:", error);
-                return null; // Return null or handle the error appropriately
+               return res.status(500).send({ error:error.message, status: 500 });
+               // return null; // Return null or handle the error appropriately
             }
         }
 
@@ -550,7 +551,9 @@ submitFmsQuestionare.post('/submitFmsUserQAcreateTaskStep1', async (req, res) =>
 
             } catch (error) {
                 console.error("Failed to fetch holidays:", error);
-                return null; // Return null or handle the error appropriately
+                return res.status(500).send({ error:error.message, status: 500 });
+              // return null;
+                // Return null or handle the error appropriately
             }
         }
 
@@ -595,8 +598,8 @@ submitFmsQuestionare.post('/submitFmsUserQAcreateTaskStep1', async (req, res) =>
 
     } catch (error) {
         console.error('Error posting data:', error);
-        res.status(500).send({ message: 'Error Creaating New Task For A User', status: 500 });
-        return;
+        return res.status(500).send({ error:error.message, status: 500 });
+       
     }
 
 }
@@ -688,7 +691,8 @@ async function updateAndCountDocuments(companyUrl , fmsQAId , fmsMasterId) {
             );
             await client.close();
         } catch (error) {
-            console.error("Error:", error);
+           return res.status(500).send({ error:error.message, status: 500 });
+            //console.error("Error:", error);
             
         }
 
@@ -712,7 +716,9 @@ async function updateAndCountDocuments(companyUrl , fmsQAId , fmsMasterId) {
             console.log('NO OF FMS THAT ARE LIVE ' , count);
             await client.close();
         } catch (error) {
+            
             console.error("Error:", error);
+            return res.status(500).send({ error:error.message, status: 500 });
             
         }
 
@@ -734,7 +740,8 @@ async function updateAndCountDocuments(companyUrl , fmsQAId , fmsMasterId) {
         return count;
     } catch (error) {
         console.error("Error:", error);
-        return error
+       return res.status(500).send({ error:error.message, status: 500 });
+        
     }
 }
 

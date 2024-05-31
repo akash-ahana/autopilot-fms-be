@@ -36,9 +36,9 @@ transferFmsTask.post("/transferFmsTask", async (req, res) => {
     companyUrl = response.data.verify_company_url;
     userEmail = response.data.email_id;
   } catch (error) {
-    //console.error('Error posting data:', error);
-    res.status(500).send({ error: "Error fetching user details", status: 500 });
-    return;
+      //console.error('Error posting data:', error);
+       return res.status(500).send({ error: "Error fetching user details", status: 500 });
+      //return;
   }
 
   //try catch block to create a newFmsTask for the new Doer
@@ -119,7 +119,7 @@ transferFmsTask.post("/transferFmsTask", async (req, res) => {
     res.json({ message: "Task transferred successfully", status: 200 });
   } catch (error) {
     console.error("Error Connecting to MongoDB", error);
-    res.status(500).send({ error: "Error transferring task", status: 500 });
+     return res.status(500).send({ error: "Error transferring task", status: 500 });
   }
 
   //  //-------------------------Triggr Whatsapp Messages---------------------------------------//

@@ -44,8 +44,8 @@ updateFmsTask.post('/updateFmsTask' , async (req, res) => {
         userEmail = response.data.email_id;
     } catch (error) {
         //console.error('Error posting data:', error);
-         res.status(500).send({ error: "Error fetching user details", status: 500 });
-        return;
+        return res.status(500).json({ error: error.message });
+
     }
 
     console.log('UPDATING THE TASK')
@@ -137,8 +137,8 @@ updateFmsTask.post('/updateFmsTask' , async (req, res) => {
 
     } catch (error) {
         console.error('Error posting data:', error);
-         res.status(500).send({ error: "Error getting Details for FMS Task", status: 500 });
-        return;
+        return res.status(500).json({ error: error.message });
+
     }
 
 
@@ -530,8 +530,8 @@ updateFmsTask.post('/updateFmsTask' , async (req, res) => {
         
             } catch (error) {
                 console.error('Error posting data:', error);
-                 res.status(500).send({ error: "Error Creating Next Task", status: 500 });
-                return;
+                return res.status(500).json({ error: error.message });
+
             }
 
         }
@@ -621,6 +621,8 @@ async function updateTaskStatus(companyUrl ,fmsTaskId, formStepsAnswers,fmsTaskQ
 
     } catch (error) {
         console.error('Error:', error);
+        return res.status(500).json({ error: error.message });
+
     } finally {
         await client.close();
     }
@@ -643,6 +645,8 @@ async function updateAndCountDocuments(companyUrl , fmsQAId , fmsMasterId) {
             await client.close();
         } catch (error) {
             console.error("Error:", error);
+            return res.status(500).json({ error: error.message });
+
             
         }
 
@@ -667,6 +671,8 @@ async function updateAndCountDocuments(companyUrl , fmsQAId , fmsMasterId) {
             await client.close();
         } catch (error) {
             console.error("Error:", error);
+            return res.status(500).json({ error: error.message });
+
             
         }
 
@@ -688,7 +694,8 @@ async function updateAndCountDocuments(companyUrl , fmsQAId , fmsMasterId) {
         return count;
     } catch (error) {
         console.error("Error:", error);
-        return error
+        return res.status(500).json({ error: error.message });
+
     }
 }
 

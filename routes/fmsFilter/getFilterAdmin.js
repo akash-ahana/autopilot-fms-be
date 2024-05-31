@@ -29,7 +29,7 @@ getfilterAdmin.get('/getfilterAdmin', async (req, res) => {
     userEmail = response.data.email_id;
   } catch (error) {
     console.error("Error posting data:", error);
-    return res.status(500).json({ message: "Error fetching user details", status: 500 });
+    return res.status(500).json({ error: error.message });
   }
 
   // Extract query parameters from request query
@@ -113,7 +113,7 @@ if (status!== undefined) {
         }
       } catch (error) {
         console.error("Error while fetching week details:", error);
-        return res.status(500).json({ error: "Internal server error" });
+        return res.status(500).json({ error: error.message });
       }
     }
 
@@ -132,7 +132,7 @@ if (status!== undefined) {
     console.log('MongoDB connection closed');
   } catch (error) {
     console.error("Error connecting to MongoDB", error);
-    return res.status(500).json({ message: "Error filtering tasks", status: 500 });
+    return res.status(500).json({ error: error.message });
   }
 });
 

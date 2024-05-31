@@ -58,11 +58,18 @@ perfomanceCalculation.post("/fmsPerfomanceCalculation", async (req, res) => {
     const TotalpendingCount = taskDocuments.filter(task => task.fmsTaskStatus === 'PENDING').length;
     const TotaloverdueCount = taskDocuments.filter(task => task.fmsTaskStatus === 'OVERDUE').length;
     const TotalcompletedCount = taskDocuments.filter(task => task.fmsTaskStatus === 'COMPLETED').length;
+    const TotalDelayedCount = taskDocument.filter(task => task.fmsTaskCompletedStatus === 'DELAY').length;
 
     // to find totalOverduePercentage 
     const TotalTask = TotaloverdueCount + TotalpendingCount;
     const PercentageofOverdueTask = TotalTask ? ((TotaloverdueCount / TotalTask) * 100) : 0;
 
+    // to find totalDelayedPercentage
+
+    // Percentage of delayed tasks - [ number of delayed tasks / number of completed tasks ]
+
+    const TotalDelayedTaskPercentage = ((TotalDelayedCount / TotalcompletedCount) * 100);
+    console.log("");
     console.log("TotalpendingCount", TotalpendingCount);
     console.log("TotaloverdueCount", TotaloverdueCount);
     console.log("TotalcompletedCount", TotalcompletedCount);
@@ -74,6 +81,7 @@ perfomanceCalculation.post("/fmsPerfomanceCalculation", async (req, res) => {
     TotaloverdueCount: TotaloverdueCount, 
     TotalcompletedCount: TotalcompletedCount, 
     PercentageofOverdueTask: PercentageofOverdueTask, 
+    TotalDelayedTaskPercentage: TotalDelayedTaskPercentage,
     status: 200 
   });
 

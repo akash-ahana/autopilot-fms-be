@@ -153,6 +153,11 @@ app.use("/getfilterPC", getfilterPC);
 const fmsdataanalytics = require("./routes/fmsDataAnalytics");
 app.use("/fmsdataanalytics", fmsdataanalytics);
 
+//----------------------------------------------------------------------//
+const updateQualitySteps = require("./routes/updateQualityStep");
+app.use("/updateQualitySteps", updateQualitySteps);
+
+
 
 
 var server = app.listen(process.env.PORT, function () {

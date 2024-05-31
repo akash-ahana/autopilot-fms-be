@@ -18,23 +18,23 @@ transferFmsTask.post("/transferFmsTask", async (req, res) => {
   let userEmail = "";
 
   console.log(req.headers.authorization)
-    const authHeader = req.headers.authorization;
-    if (!authHeader || !authHeader.startsWith("Bearer")) {
-      //console.log("error: Authorization header missing or malformed");
-      return res.status(401).json({ error: 'Unauthorized' });
-    }
-    const token = authHeader.split(" ")[1];
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith("Bearer")) {
+    //console.log("error: Authorization header missing or malformed");
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+  const token = authHeader.split(" ")[1];
 
-    //console.log('token fetched is ' , token)
+  //console.log('token fetched is ' , token)
 
   try {
-      // Fetch user details and company details based on the token
-      const response = await axios.post(process.env.MAIN_BE_URL, { token: token });
-      //console.log('Fetched User Details and Company Details', response.data);
-      userName = response.data.emp_name;
-      userID = response.data.user_id;
-      companyUrl = response.data.verify_company_url;
-      userEmail = response.data.email_id;
+    // Fetch user details and company details based on the token
+    const response = await axios.post(process.env.MAIN_BE_URL, { token: token });
+    //console.log('Fetched User Details and Company Details', response.data);
+    userName = response.data.emp_name;
+    userID = response.data.user_id;
+    companyUrl = response.data.verify_company_url;
+    userEmail = response.data.email_id;
   } catch (error) {
       //console.error('Error posting data:', error);
        return res.status(500).send({ error: "Error fetching user details", status: 500 });
@@ -49,57 +49,74 @@ transferFmsTask.post("/transferFmsTask", async (req, res) => {
     const db = client.db(companyUrl);
     const collection = db.collection("fmsTasks");
 
-     // Find the last inserted document and get its incremental value
-     const lastDocument = await collection.find().sort({ _id: -1 }).limit(1).toArray();
-     let fmsTaskId = 1;
+    // Find the last inserted document and get its incremental value
+    const lastDocument = await collection.find().sort({ _id: -1 }).limit(1).toArray();
+    let fmsTaskId = 1;
 
-     if (lastDocument.length > 0) {
-         fmsTaskId = lastDocument[0].fmsTaskId + 1;
-     }
+    if (lastDocument.length > 0) {
+      fmsTaskId = lastDocument[0].fmsTaskId + 1;
+    }
 
-     const currentDate = moment().tz('Asia/Kolkata').format();
-     // Inserting data into the collection
-     const result = await collection.insertOne({
+    console.log("req.body" , req.body)
+
+    const fetchQAId = req.body.task.fmsQAId;
+    console.log("fetchQAId", fetchQAId);
+
+    // Fetch documents based on fmsQAId
+    const taskDocument = await collection.findOne({  fmsTaskId : req.body.task.fmsTaskId });
+    console.log("task document for previous doer", taskDocument.fmsTaskDoer);
+    // console.log("req.body.fmsTransferredToUser.employeeId" , req.body.task.fmsTransferredToUser.employeeId);
+
+    // Validate if the task is being transferred to the same doer
+    if (req.body.fmsTransferredToUser.employeeId === taskDocument.fmsTaskDoer.employeeId) {
+      return res.status(400).json({ error: 'Task cannot be transferred to the same doer' });
+    } else{
+      const currentDate = moment().tz('Asia/Kolkata').format();
+    // Inserting data into the collection
+    const result = await collection.insertOne({
       fmsTaskId,
-      fmsQAId : req.body.task.fmsQAId,
-      fmsQACreatedBy : req.body.task.fmsQACreatedBy,
-      fmsMasterId : req.body.task.fmsMasterId,
+      fmsQAId: req.body.task.fmsQAId,
+      fmsQACreatedBy: req.body.task.fmsQACreatedBy,
+      fmsMasterId: req.body.task.fmsMasterId,
       fmsName: req.body.task.fmsName,
       fmsQA: req.body.task.fmsQA,
-      fmsTaskDoer : req.body.fmsTransferredToUser,
-      fmsTaskStatus : "OVERDUE",
-      fmsTaskCompletedStatus : req.body.task.fmsTaskCompletedStatus,  //either ONTIME OR DELAYED
-      fmsProcessID : req.body.task.fmsProcessID,
-      plannedDate : req.body.task.plannedDate,
-      what : req.body.task.what,
+      fmsTaskDoer: req.body.fmsTransferredToUser,
+      fmsTaskStatus: "OVERDUE",
+      fmsTaskCompletedStatus: req.body.task.fmsTaskCompletedStatus,  //either ONTIME OR DELAYED
+      fmsProcessID: req.body.task.fmsProcessID,
+      plannedDate: req.body.task.plannedDate,
+      what: req.body.task.what,
       how: req.body.task.how,
-      stepId : req.body.task.stepId,
-      stepType : req.body.task.stepType,
-      fmsTaskCreatedTime : currentDate,
+      stepId: req.body.task.stepId,
+      stepType: req.body.task.stepType,
+      fmsTaskCreatedTime: currentDate,
       //fmsTaskPlannedCompletionTime : new Date(new Date().setHours(new Date().getHours() + Number(timeHrs.trim()))),
-      fmsTaskCreatedTime : req.body.task.fmsTaskCreatedTime,
-      fmsTaskPlannedCompletionTime : req.body.task.fmsTaskPlannedCompletionTime,
+      fmsTaskCreatedTime: req.body.task.fmsTaskCreatedTime,
+      fmsTaskPlannedCompletionTime: req.body.task.fmsTaskPlannedCompletionTime,
       formStepsAnswers: null,
-      fmsTaskQualityDetails : null,
-      fmsTaskTransferredFrom : req.body.task.fmsTaskDoer,
+      fmsTaskQualityDetails: null,
+      fmsTaskTransferredFrom: req.body.task.fmsTaskDoer,
       isTransferredFrom: true,    //is this task transferred FROM other Task
       isTranferredTo: false,       //is this task transferred TO other Task
-      transferredFromTaskId : req.body.task.fmsTaskId, 
-      transferredToTaskId : null,
-      
-  });
+      transferredFromTaskId: req.body.task.fmsTaskId,
+      transferredToTaskId: null,
 
-      console.log(result);
-      console.log('Created the Task For New Doer');
-  
+    });
 
-      // Close the MongoDB connection
-      await client.close();
-      //console.log('MongoDB connection closed');
+    }
 
-      //console.log("New task created for new Doer", newTaskDocument);
+    
+    // console.log(result);
+    console.log('Created the Task For New Doer');
 
-    //res.json({ message: "Task transferred successfully", status: 200 });
+
+    // Close the MongoDB connection
+    await client.close();
+    //console.log('MongoDB connection closed');
+
+    //console.log("New task created for new Doer", newTaskDocument);
+
+    res.json({ message: "Task transferred successfully", status: 200 });
   } catch (error) {
     console.error("Error Connecting to MongoDB", error);
      return res.status(500).send({ error: "Error transferring task", status: 500 });
@@ -119,7 +136,7 @@ transferFmsTask.post("/transferFmsTask", async (req, res) => {
   //      console.error('Error sending WhatsApp message:', whatsappError);
   //  }
 
-  res.json({ message: "Task transferred successfully", status: 200 });
+ // res.json({ message: "Task transferred successfully", status: 200 });
 });
 
 

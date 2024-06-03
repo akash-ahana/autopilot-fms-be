@@ -34,10 +34,7 @@ perfomanceCalculation.post("/fmsPerfomanceCalculation", async (req, res) => {
     userEmail = response.data.email_id;
   } catch (error) {
     console.error("Error posting data:", error);
-    res
-      .status(500)
-      .send({error: "Error fetching user details", status: 500 });
-    return;
+    return res.status(500).json({ error: error.message });
   }
 
   try {
@@ -87,7 +84,7 @@ perfomanceCalculation.post("/fmsPerfomanceCalculation", async (req, res) => {
 
   } catch (error) {
     console.error("Error Connecting to MongoDB", error);
-     res.status(500).send({ error: "Failed to fetch performance calculation", status: 500 });
+     return res.status(500).send({ error: "Failed to fetch performance calculation", status: 500 });
   }
 });
 

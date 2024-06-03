@@ -36,9 +36,9 @@ transferFmsTask.post("/transferFmsTask", async (req, res) => {
     companyUrl = response.data.verify_company_url;
     userEmail = response.data.email_id;
   } catch (error) {
-      //console.error('Error posting data:', error);
-       return res.status(500).send({ error: "Error fetching user details", status: 500 });
-      //return;
+    //console.error('Error posting data:', error);
+    res.status(500).send({ error: "Error fetching user details", status: 500 });
+    return;
   }
 
   //try catch block to create a newFmsTask for the new Doer
@@ -64,8 +64,20 @@ transferFmsTask.post("/transferFmsTask", async (req, res) => {
 
     // Fetch documents based on fmsQAId
     const taskDocument = await collection.findOne({  fmsTaskId : req.body.task.fmsTaskId });
-    console.log("task document for previous doer", taskDocument.fmsTaskDoer);
+    
+
+    
+    const result = await collection.updateOne(
+      { fmsTaskId: req.body.task.fmsTaskId },
+      { $set: { transferredStatus: true } }
+    );
+    console.log("task document for previous doer", taskDocument.transferredStatus);
     // console.log("req.body.fmsTransferredToUser.employeeId" , req.body.task.fmsTransferredToUser.employeeId);
+
+
+    if (taskDocument.transferredStatus === true) {
+      return res.status(400).json({ error: 'Task has already been transferred' });
+    }
 
     // Validate if the task is being transferred to the same doer
     if (req.body.fmsTransferredToUser.employeeId === taskDocument.fmsTaskDoer.employeeId) {
@@ -95,6 +107,7 @@ transferFmsTask.post("/transferFmsTask", async (req, res) => {
       fmsTaskPlannedCompletionTime: req.body.task.fmsTaskPlannedCompletionTime,
       formStepsAnswers: null,
       fmsTaskQualityDetails: null,
+      transferredStatus : false,
       fmsTaskTransferredFrom: req.body.task.fmsTaskDoer,
       isTransferredFrom: true,    //is this task transferred FROM other Task
       isTranferredTo: false,       //is this task transferred TO other Task
@@ -119,7 +132,7 @@ transferFmsTask.post("/transferFmsTask", async (req, res) => {
     res.json({ message: "Task transferred successfully", status: 200 });
   } catch (error) {
     console.error("Error Connecting to MongoDB", error);
-     return res.status(500).send({ error: "Error transferring task", status: 500 });
+    res.status(500).send({ error: "Error transferring task", status: 500 });
   }
 
   //  //-------------------------Triggr Whatsapp Messages---------------------------------------//

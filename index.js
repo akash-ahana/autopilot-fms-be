@@ -157,6 +157,9 @@ app.use("/fmsdataanalytics", fmsdataanalytics);
 const updateQualitySteps = require("./routes/updateQualityStep");
 app.use("/updateQualitySteps", updateQualitySteps);
 
+//----------------------------------------------------------------------//
+const fmsStatusWhatsapp = require("./routes/fmsSendStatus");
+app.use("/fmsStatusWhatsapp", fmsStatusWhatsapp);
 
 
 

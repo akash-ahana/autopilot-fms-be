@@ -60,7 +60,8 @@ getFmsTasks.get('/findAllFmsTasksForUser' , async (req, res) => {
     } 
     catch (error) {
         console.error('Error Connecting to MongoDB', error);
-        return res.status(500).json({ error: error.message });    }
+        return res.status(500).json({ error: error.message });    
+    }
 })
 
 //find ALL FMS Tasks FOR A USER THAT ARE DUE TODAY AND ALL OVERDUE TASKS
@@ -96,6 +97,7 @@ getFmsTasks.get('/findAllFmsTasksForUserPendingOrOverdue' , async (req, res) => 
         console.error('Error posting data:', error);
         return res.status(500).json({ error: error.message });
     }
+    
     //update pending task to overdue based on current time
     try {
         const client = await MongoClient.connect(process.env.MONGO_DB_STRING);

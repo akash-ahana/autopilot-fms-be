@@ -47,9 +47,99 @@ updateFmsTask.post('/updateFmsTask' , async (req, res) => {
         return res.status(500).json({ error: error.message });
 
     }
+    
 
+     ////
+     ////
+    //fetch if the task is already created based on fmsQAId and stepId if not create a new task , else update the task status  -- this is done for quality Step
+    console.log('fmsQAId' , '---------' , req.body.fmsQAId , '----------' , 'updated stepId' , req.body.stepId , '----------' , 'to create stepId' , '----' , req.body.stepId + 1   )
+    //try catch block to check if the task is already created
+    let isTaskAlreadyCreated
+    let alreadyCreatedTask
+    try {
+        // Connect to MongoDB and perform operations
+        const client = await MongoClient.connect(process.env.MONGO_DB_STRING, {
+            socketTimeoutMS: 60000, // Increase timeout to 60 seconds
+        });
+        //console.log('Connected to database');
+        const db = client.db(companyUrl);
+        const collection = db.collection('fmsTasks');
+        
+        let nextStepId = req.body.stepId + 1 
+        const document = await collection.findOne({ fmsQAId: req.body.fmsQAId, stepId: nextStepId });
+        console.log('retrieved document' , document);
+        if (document) {
+            isTaskAlreadyCreated = true;
+            alreadyCreatedTask = document
+          } else {
+            isTaskAlreadyCreated = false;
+          }
+    
+        // Close the MongoDB connection
+        client.close();
+        //console.log('MongoDB connection closed');
+    }
+    catch (error) {
+        console.error('Error Connecting to MongoDB', error);
+        return res.status(500).json({ error: error.message });
+    }
+    console.log( 'isTaskAlreadyCreated' , isTaskAlreadyCreated )
+
+    //if task is already created update the task
+    let updatedStatus;
+    if(isTaskAlreadyCreated == true) {
+         //compare the taskPlannedCompletionTime and current time and based on that set the Status
+        const currentDate = moment().tz('Asia/Kolkata').format();
+        if (alreadyCreatedTask.fmsTaskPlannedCompletionTime > currentDate ) {
+        console.log("updateTask.fmsTaskPlannedCompletionTime" , alreadyCreatedTask.fmsTaskPlannedCompletionTime)
+        console.log("currentDateTime" , currentDate)
+        updatedStatus = "PENDING"
+        } else {
+        console.log("updateTask.fmsTaskPlannedCompletionTime" , alreadyCreatedTask.fmsTaskPlannedCompletionTime)
+        console.log("currentDateTime" , currentDate)
+        updatedStatus = "OVERDUE"
+        }    
+        
+         //TRY CATCH BLOCK TO UPDATE THE TASK
+    try {
+        // Connect to MongoDB and perform operations
+        const client = await MongoClient.connect(process.env.MONGO_DB_STRING);
+        //console.log('Connected to database');
+        const db = client.db(companyUrl);
+        const collection = db.collection('fmsTasks');
+        
+        console.log("Updated Status", '----------------' , updatedStatus )
+        let nextStepId = req.body.stepId + 1 
+        const task = await collection.findOneAndUpdate(
+          { fmsQAId : req.body.fmsQAId, stepId: nextStepId },
+        {
+            $set: {
+                    fmsTaskStatus: updatedStatus,
+                  }
+            },
+          { returnOriginal: false }
+      );
+
+        // Close the MongoDB connection
+        await client.close();
+        //console.log('MongoDB connection closed');
+    } 
+    catch (error) {
+        console.error('Error Connecting to MongoDB', error);
+        return res.status(500).json({ error: error.message });    
+    }
+    }
+     
+
+   
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////
     console.log('UPDATING THE TASK')
     await updateTaskStatus(companyUrl , req.body.fmsTaskId, req.body.formStepsAnswers, req.body.fmsTaskQualityDetails);
+////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    
+
+     
 
     
 
@@ -57,7 +147,7 @@ updateFmsTask.post('/updateFmsTask' , async (req, res) => {
     
     
     console.log('fetching info to create next task')
-    //try block to fetch the next task
+    //try block to fetch the details required to create the next task
     let shouldcreateNextTask;
     let nextTask;
     let employee;
@@ -138,17 +228,21 @@ updateFmsTask.post('/updateFmsTask' , async (req, res) => {
     } catch (error) {
         console.error('Error posting data:', error);
         return res.status(500).json({ error: error.message });
-
     }
+
+   
 
 
    
         //try catch block to create next Task
         // create nex ttask only if it is not the last step in the FMS
         console.log('Creating the next task if ' , shouldcreateNextTask)
-        if(shouldcreateNextTask) {
+        if(shouldcreateNextTask && isTaskAlreadyCreated==false) {
+            console.log('Inside the condition to create New Task')
+           
+
             let plannedCompletionTime;
-    let plannedCompletionTimeIST
+            let plannedCompletionTimeIST
             try {
 
                 //calculation of fmsTaskPlannedCompletionTime (start time - form submitted time, and tat in hrs or days)

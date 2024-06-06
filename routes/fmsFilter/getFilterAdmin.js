@@ -2,6 +2,8 @@ const express = require("express");
 const getfilterAdmin = express.Router();
 const MongoClient = require('mongodb').MongoClient;
 const axios = require('axios');
+const { infoLogger, errorLogger } = require("../../middleware/logger");
+
 
 getfilterAdmin.get('/getfilterAdmin', async (req, res) => {
   let userName = "";
@@ -13,10 +15,11 @@ getfilterAdmin.get('/getfilterAdmin', async (req, res) => {
   const authHeader = req.headers.authorization;
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
     console.log("Error: Authorization header missing or malformed");
+    errorLogger.log("error", `Token ${req.headers.authorization} is un-authorized as authorization header missing or malformed for api getfilterAdmin`);
     return res.status(401).json({ error: "Unauthorized" });
   }
   const token = authHeader.split(" ")[1];
-
+  infoLogger.log("info", `token ${token} is verified successfuly for the api getfilterAdmin`);
   console.log("Token fetched is", token);
 
   try {
@@ -27,8 +30,10 @@ getfilterAdmin.get('/getfilterAdmin', async (req, res) => {
     userID = response.data.user_id;
     companyUrl = response.data.verify_company_url;
     userEmail = response.data.email_id;
+    infoLogger.log("info", `${JSON.stringify(response.data)} logged in autopilot fms`)
   } catch (error) {
     console.error("Error posting data:", error);
+    errorLogger.log("error",`Failed to fetch user details due to ${error.message}`)
     return res.status(500).json({ error: error.message });
   }
 
@@ -46,6 +51,7 @@ if (status!== undefined) {
     console.log("Connected to database");
     const db = client.db(companyUrl);
     const collection = db.collection("fmsTasks");
+    infoLogger.log("info", `${userName} from company ${companyUrl} hit the api getfilterAdmin`)
 
     // Log the specific fields to debug
     console.log("fmsTaskStatus:", status);
@@ -109,10 +115,12 @@ if (status!== undefined) {
           console.log("Query result:", query.fmsTaskPlannedCompletionTime);
         } else {
           console.error("Error: Provided week_no doesn't match any fetched week_no");
+          errorLogger.log("error" , `Invalid week no provided by the user:${userName}`);
           return res.status(400).json({ error: "Invalid week_no provided" });
         }
       } catch (error) {
         console.error("Error while fetching week details:", error);
+        errorLogger.log("error" , `Error fetching week details due to ${error.message}`);
         return res.status(500).json({ error: error.message });
       }
     }
@@ -122,6 +130,8 @@ if (status!== undefined) {
     console.log("Task Documents:", taskDocuments);
 
     // Send the fetched documents as the response
+    infoLogger.log("info", `${userName} successfully fetch the filter fms data ${JSON.stringify(taskDocuments)}`)
+
     res.status(200).json({
       message: taskDocuments,
       status: 200
@@ -132,6 +142,7 @@ if (status!== undefined) {
     console.log('MongoDB connection closed');
   } catch (error) {
     console.error("Error connecting to MongoDB", error);
+    errorLogger.log("error" , `${userName} failed to fetch the filter fms task due to ${error.message}`);
     return res.status(500).json({ error: error.message });
   }
 });

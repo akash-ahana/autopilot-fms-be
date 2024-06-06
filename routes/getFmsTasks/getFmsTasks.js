@@ -3,6 +3,8 @@ const getFmsTasks = express.Router();
 var MongoClient = require('mongodb').MongoClient;
 const axios = require('axios');
 const moment = require('moment-timezone');
+const { infoLogger, errorLogger } = require("../../middleware/logger");
+
 
 //find ALL FMS Tasks FOR A USER 
 getFmsTasks.get('/findAllFmsTasksForUser' , async (req, res) => {
@@ -19,10 +21,11 @@ getFmsTasks.get('/findAllFmsTasksForUser' , async (req, res) => {
       const authHeader = req.headers.authorization;
       if (!authHeader || !authHeader.startsWith("Bearer")) {
         //console.log("error: Authorization header missing or malformed");
+        errorLogger.log("error", `Token ${req.headers.authorization} is un-authorized as authorization header missing or malformed for api findAllFmsTasksForUser`);
         return res.status(401).json({ error: 'Unauthorized' });
       }
       const token = authHeader.split(" ")[1];
-
+      infoLogger.log("info", `token ${token} is verified successfuly for the api findAllFmsTasksForUser`);
       //console.log('token fetched is ' , token)
 
       try {
@@ -33,8 +36,10 @@ getFmsTasks.get('/findAllFmsTasksForUser' , async (req, res) => {
         userID = response.data.user_id;
         companyUrl = response.data.verify_company_url;
         userEmail = response.data.email_id;
+        infoLogger.log("info", `${JSON.stringify(response.data)} logged in autopilot fms`)
     } catch (error) {
         console.error('Error posting data:', error);
+        errorLogger.log("error",`Failed to fetch user details due to ${error.message}`)
         return res.status(500).json({ error: error.message });
     }
 
@@ -44,9 +49,12 @@ getFmsTasks.get('/findAllFmsTasksForUser' , async (req, res) => {
         //console.log('Connected to database');
         const db = client.db(companyUrl);
         const collection = db.collection('fmsTasks');
+        infoLogger.log("info", `${userName} from company ${companyUrl} hit the api findAllFmsTasksForUser`)
 
         const cursor = collection.find({ "fmsTaskDoer.employeeId": userID });
         const documents = await cursor.toArray();
+
+        infoLogger.log("info", `${userName} successfully fetch All Fms Tasks For User:${JSON.stringify(documents)}`)
 
         //console.log(documents)
         res.json({
@@ -60,6 +68,7 @@ getFmsTasks.get('/findAllFmsTasksForUser' , async (req, res) => {
     } 
     catch (error) {
         console.error('Error Connecting to MongoDB', error);
+        errorLogger.log("error" , `${userName} failed to fetch All Fms Tasks For User due to ${error.message}`);
         return res.status(500).json({ error: error.message });    }
 })
 
@@ -78,10 +87,11 @@ getFmsTasks.get('/findAllFmsTasksForUserPendingOrOverdue' , async (req, res) => 
       const authHeader = req.headers.authorization;
       if (!authHeader || !authHeader.startsWith("Bearer")) {
         //console.log("error: Authorization header missing or malformed");
+        errorLogger.log("error", `Token ${req.headers.authorization} is un-authorized as authorization header missing or malformed for api findAllFmsTasksForUserPendingOrOverdue`);
         return res.status(401).json({ error: 'Unauthorized' });
       }
       const token = authHeader.split(" ")[1];
- 
+      infoLogger.log("info", `token ${token} is verified successfuly for the api findAllFmsTasksForUserPendingOrOverdue`);
       //console.log('token fetched is ' , token)
  
       try {
@@ -92,8 +102,11 @@ getFmsTasks.get('/findAllFmsTasksForUserPendingOrOverdue' , async (req, res) => 
         userID = response.data.user_id;
         companyUrl = response.data.verify_company_url;
         userEmail = response.data.email_id;
+        infoLogger.log("info", `${JSON.stringify(response.data)} logged in autopilot fms`)
+
     } catch (error) {
         console.error('Error posting data:', error);
+        errorLogger.log("error",`Failed to fetch user details due to ${error.message}`)
         return res.status(500).json({ error: error.message });
     }
     //update pending task to overdue based on current time
@@ -102,7 +115,7 @@ getFmsTasks.get('/findAllFmsTasksForUserPendingOrOverdue' , async (req, res) => 
         //console.log('Connected to database');
         const db = client.db(companyUrl);
         const collection = db.collection('fmsTasks');
- 
+
         const pendingTasks = await collection.find({ fmsTaskStatus: 'PENDING','fmsTaskDoer.employeeId': userID }).toArray();
         console.log('Pending tasks:', pendingTasks);
  
@@ -119,6 +132,7 @@ getFmsTasks.get('/findAllFmsTasksForUserPendingOrOverdue' , async (req, res) => 
                 console.log(`Task ${task.fmsTaskId} marked as OVERDUE`);
             }
         }
+
         
         // Close the database connection
         await client.close();
@@ -126,6 +140,7 @@ getFmsTasks.get('/findAllFmsTasksForUserPendingOrOverdue' , async (req, res) => 
         
     } catch (error) {
         console.error('Error Connecting to MongoDB', error);
+
         return res.status(500).json({ error: error.message });
     }
 
@@ -136,7 +151,8 @@ getFmsTasks.get('/findAllFmsTasksForUserPendingOrOverdue' , async (req, res) => 
         //console.log('Connected to database');
         const db = client.db(companyUrl);
         const collection = db.collection('fmsTasks');
- 
+        infoLogger.log("info", `${userName} from company ${companyUrl} hit the api findAllFmsTasksForUserPendingOrOverdue`)
+
         const cursor = collection.find({
             "fmsTaskDoer.employeeId": userID,
             $or: [
@@ -146,6 +162,7 @@ getFmsTasks.get('/findAllFmsTasksForUserPendingOrOverdue' , async (req, res) => 
           });
         const documents = await cursor.toArray();
         //console.log(documents)
+        infoLogger.log("info", `${userName} successfully fetch All Fms Tasks For User Pending or Overdue:${JSON.stringify(documents)}`)
         res.json({
             "message" : [documents],
             "status" : 200
@@ -157,6 +174,8 @@ getFmsTasks.get('/findAllFmsTasksForUserPendingOrOverdue' , async (req, res) => 
     } 
     catch (error) {
         console.error('Error Connecting to MongoDB', error);
+        errorLogger.log("error" , `${userName} failed to fetch All Fms Tasks For User Pending or Overdue due to ${error.message}`);
+
         return res.status(500).json({ error: error.message });
     }
 })
@@ -241,10 +260,11 @@ getFmsTasks.get('/findAllFmsOverDueTasks' , async (req, res) => {
       const authHeader = req.headers.authorization;
       if (!authHeader || !authHeader.startsWith("Bearer")) {
         //console.log("error: Authorization header missing or malformed");
+        errorLogger.log("error", `Token ${req.headers.authorization} is un-authorized as authorization header missing or malformed for api findAllFmsOverDueTasks`);
         return res.status(401).json({ error: 'Unauthorized' });
       }
       const token = authHeader.split(" ")[1];
-
+      infoLogger.log("info", `token ${token} is verified successfuly for the api findAllFmsOverDueTasks`);
       //console.log('token fetched is ' , token)
 
       try {
@@ -255,8 +275,11 @@ getFmsTasks.get('/findAllFmsOverDueTasks' , async (req, res) => {
         userID = response.data.user_id;
         companyUrl = response.data.verify_company_url;
         userEmail = response.data.email_id;
+        infoLogger.log("info", `${JSON.stringify(response.data)} logged in autopilot fms`)
+
     } catch (error) {
         console.error('Error posting data:', error);
+        errorLogger.log("error",`Failed to fetch user details due to ${error.message}`)
         return res.status(500).json({ error: error.message });
     }
 
@@ -266,11 +289,14 @@ getFmsTasks.get('/findAllFmsOverDueTasks' , async (req, res) => {
         //console.log('Connected to database');
         const db = client.db(companyUrl);
         const collection = db.collection('fmsTasks');
+        infoLogger.log("info", `${userName} from company ${companyUrl} hit the api findAllFmsOverDueTasks`)
+
 
         const cursor = collection.find({fmsTaskStatus : "OVERDUE"});
         const documents = await cursor.toArray();
 
         //console.log(documents)
+        infoLogger.log("info", `${userName} successfully fetch all Overdue fms tasks:${JSON.stringify(documents)}`)
         res.json({
             "message" : [documents],
             "status" : 200
@@ -282,6 +308,7 @@ getFmsTasks.get('/findAllFmsOverDueTasks' , async (req, res) => {
     } 
     catch (error) {
         console.error('Error Connecting to MongoDB', error);
+        errorLogger.log("error" , `${userName} failed to fetch all Overdue fms tasks due to ${error.message}`);
         return res.status(500).json({ error: error.message });
     }
 })
@@ -299,9 +326,11 @@ getFmsTasks.get('/findAllFmsPendingTasks' , async (req, res) => {
       const authHeader = req.headers.authorization;
       if (!authHeader || !authHeader.startsWith("Bearer")) {
         //console.log("error: Authorization header missing or malformed");
+        errorLogger.log("error", `Token ${req.headers.authorization} is un-authorized as authorization header missing or malformed for api findAllFmsPendingTasks`);
         return res.status(401).json({ error: 'Unauthorized' });
       }
       const token = authHeader.split(" ")[1];
+      infoLogger.log("info", `token ${token} is verified successfuly for the api findAllFmsPendingTasks`);
 
       //console.log('token fetched is ' , token)
 
@@ -313,8 +342,11 @@ getFmsTasks.get('/findAllFmsPendingTasks' , async (req, res) => {
         userID = response.data.user_id;
         companyUrl = response.data.verify_company_url;
         userEmail = response.data.email_id;
+        infoLogger.log("info", `${JSON.stringify(response.data)} logged in autopilot fms`)
+
     } catch (error) {
         console.error('Error posting data:', error);
+        errorLogger.log("error",`Failed to fetch user details due to ${error.message}`)
         return res.status(500).json({ error: error.message });
     }
 
@@ -324,11 +356,13 @@ getFmsTasks.get('/findAllFmsPendingTasks' , async (req, res) => {
         //console.log('Connected to database');
         const db = client.db(companyUrl);
         const collection = db.collection('fmsTasks');
+        infoLogger.log("info", `${userName} from company ${companyUrl} hit the api findAllFmsPendingTasks`)
 
         const cursor = collection.find({fmsTaskStatus : "PENDING"});
         const documents = await cursor.toArray();
 
         //console.log(documents)
+        infoLogger.log("info", `${userName} successfully fetch all Pending fms tasks:${JSON.stringify(documents)}`)
         res.json({
             "message" : [documents],
             "status" : 200
@@ -340,6 +374,7 @@ getFmsTasks.get('/findAllFmsPendingTasks' , async (req, res) => {
     } 
     catch (error) {
         console.error('Error Connecting to MongoDB', error);
+        errorLogger.log("error" , `${userName} failed to fetch all Pending fms tasks due to ${error.message}`);
         return res.status(500).json({ error: error.message });
     }
 })
@@ -357,10 +392,11 @@ getFmsTasks.get('/findAllFmsOverdueTasksForUser' , async (req, res) => {
       const authHeader = req.headers.authorization;
       if (!authHeader || !authHeader.startsWith("Bearer")) {
         //console.log("error: Authorization header missing or malformed");
+        errorLogger.log("error", `Token ${req.headers.authorization} is un-authorized as authorization header missing or malformed for api findAllFmsOverdueTasksForUser`);
         return res.status(401).json({ error: 'Unauthorized' });
       }
       const token = authHeader.split(" ")[1];
-
+      infoLogger.log("info", `token ${token} is verified successfuly for the api findAllFmsOverdueTasksForUser`);
       //console.log('token fetched is ' , token)
 
       try {
@@ -371,8 +407,10 @@ getFmsTasks.get('/findAllFmsOverdueTasksForUser' , async (req, res) => {
         userID = response.data.user_id;
         companyUrl = response.data.verify_company_url;
         userEmail = response.data.email_id;
+        infoLogger.log("info", `${JSON.stringify(response.data)} logged in autopilot fms`)
     } catch (error) {
         console.error('Error posting data:', error);
+        errorLogger.log("error",`Failed to fetch user details due to ${error.message}`)
         return res.status(500).json({ error: error.message });
     }
 
@@ -382,11 +420,14 @@ getFmsTasks.get('/findAllFmsOverdueTasksForUser' , async (req, res) => {
         //console.log('Connected to database');
         const db = client.db(companyUrl);
         const collection = db.collection('fmsTasks');
+        infoLogger.log("info", `${userName} from company ${companyUrl} hit the api findAllFmsOverdueTasksForUser`)
+
 
         const cursor = collection.find({fmsTaskStatus : "OVERDUE", "fmsTaskDoer.employeeId" : userID});
         const documents = await cursor.toArray();
 
         //console.log(documents)
+        infoLogger.log("info", `${userName} successfully fetch all Overdue fms tasks for user:${JSON.stringify(documents)}`)
         res.json({
             "message" : [documents],
             "status" : 200
@@ -398,6 +439,7 @@ getFmsTasks.get('/findAllFmsOverdueTasksForUser' , async (req, res) => {
     } 
     catch (error) {
         console.error('Error Connecting to MongoDB', error);
+        errorLogger.log("error" , `${userName} failed to fetch all Pending fms tasks due to ${error.message}`);
         return res.status(500).json({ error: error.message });
     }
 })
@@ -415,9 +457,11 @@ getFmsTasks.get('/findAllFmsOverdueTasksForPc' , async (req, res) => {
       const authHeader = req.headers.authorization;
       if (!authHeader || !authHeader.startsWith("Bearer")) {
         //console.log("error: Authorization header missing or malformed");
+        errorLogger.log("error", `Token ${req.headers.authorization} is un-authorized as authorization header missing or malformed for api findAllFmsOverdueTasksForPc`);
         return res.status(401).json({ error: 'Unauthorized' });
       }
       const token = authHeader.split(" ")[1];
+      infoLogger.log("info", `token ${token} is verified successfuly for the api findAllFmsOverdueTasksForPc`);
 
       //console.log('token fetched is ' , token)
 
@@ -429,8 +473,11 @@ getFmsTasks.get('/findAllFmsOverdueTasksForPc' , async (req, res) => {
         userID = response.data.user_id;
         companyUrl = response.data.verify_company_url;
         userEmail = response.data.email_id;
+        infoLogger.log("info", `${JSON.stringify(response.data)} logged in autopilot fms`)
+
     } catch (error) {
         console.error('Error posting data:', error);
+        errorLogger.log("error",`Failed to fetch user details due to ${error.message}`)
         return res.status(500).json({ error: error.message });
     }
 
@@ -442,6 +489,8 @@ getFmsTasks.get('/findAllFmsOverdueTasksForPc' , async (req, res) => {
         //console.log('Connected to database');
         const db = client.db(companyUrl);
         const collection = db.collection('fmsMaster');
+        infoLogger.log("info", `${userName} from company ${companyUrl} hit the api findAllFmsOverdueTasksForPc`)
+
 
         // Query to find documents with processCoordinatorId of 1
         const query = { "fmsProcess.processCoordinatorName": userName };
@@ -495,12 +544,14 @@ getFmsTasks.get('/findAllFmsOverdueTasksForPc' , async (req, res) => {
     } 
     catch (error) {
         console.error('Error Connecting to MongoDB', error);
+        errorLogger.log("error" , `${userName} failed to fetch all overdue fms tasks for PC due to ${error.message}`);
         return res.status(500).json({ error: error.message });
     }
 
     //console.log(fmsMasterIds)
     //console.log(overDueTasksForPc)
     //res.send(overDueTasksForPc)
+    infoLogger.log("info", `${userName} successfully fetch all Overdue fms tasks for PC:${JSON.stringify(overDueTasksForPc)}`)
      res.json({
             "message" : [overDueTasksForPc],
             "status" : 200

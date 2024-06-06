@@ -208,7 +208,7 @@ initialiseFms.post('/editFmsStep1', async (req, res) => {
       // }
 
       console.log('Document updated:', result.value);
-      infoLogger.log("info", `${userName} has updated step1 by requesting data with ${JSON.stringify(req.body)}.Based on the request,step1 is updated with the data ${JSON.stringify(insertedDocument)}`)
+    //  infoLogger.log("info", `${userName} has updated step1 by requesting data with ${JSON.stringify(req.body)}.Based on the request,step1 is updated with the data ${JSON.stringify(insertedDocument)}`)
       res.json({
           "message": `${req.body.fmsName} Step 1 is Successfully Edited`,
           "status": 200,

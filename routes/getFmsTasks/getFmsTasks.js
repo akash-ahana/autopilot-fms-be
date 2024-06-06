@@ -109,6 +109,7 @@ getFmsTasks.get('/findAllFmsTasksForUserPendingOrOverdue' , async (req, res) => 
         errorLogger.log("error",`Failed to fetch user details due to ${error.message}`)
         return res.status(500).json({ error: error.message });
     }
+    
     //update pending task to overdue based on current time
     try {
         const client = await MongoClient.connect(process.env.MONGO_DB_STRING);

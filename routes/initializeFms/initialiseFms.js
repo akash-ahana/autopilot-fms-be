@@ -7,150 +7,93 @@ const { infoLogger, errorLogger } = require("../../middleware/logger");
 const { fetchUserDetails } = require('../../helpers/fetchuserDetails');
 
 initialiseFms.post('/fmsStep1', async (req, res) => {
-    console.log("Fms Step 1 API hit");
-    console.log(req.body);
+  console.log("Fms Step 1 API hit");
+  console.log(req.body);
 
-    // Initialize variables to hold user details
-    let userName = "";
-    let userID = "";
-    let companyUrl = "";
-    let userEmail = "";
+  let userDetails = await fetchUserDetails(req.headers.authorization);
+  let userName = userDetails.userName;
+  let userID = userDetails.userID;
+  let companyUrl = userDetails.companyUrl;
+  let userEmail = userDetails.userEmail;
 
-    let userDetails = await fetchUserDetails(req.headers.authorization);
+  try {
+    // Connect to MongoDB and perform operations
+    const client = await MongoClient.connect(process.env.MONGO_DB_STRING);
+    console.log('Connected to database');
+    const db = client.db(companyUrl);
+    const collection = db.collection('fmsMaster');
+    infoLogger.log("info", `${userName} from company ${companyUrl} hit the api fmsStep1`)
 
-        userName = userDetails.userName;
-        userID = userDetails.userID;
-        companyUrl = userDetails.companyUrl;
-        userEmail = userDetails.userEmail;
+    // Convert req.body.fmsName to lowercase and remove spaces
+    const formattedFmsName = req.body.fmsName.toLowerCase().replace(/\s+/g, '');
 
-        console.log("userName" , userDetails.userName)
-        console.log("userID" , userDetails.userID)
-        console.log("companyUrl" , userDetails.companyUrl)
-        console.log("userEmail" , userDetails.userEmail)
+    // Check if fmsName already exists in the collection (case-insensitive, ignoring spaces)
+    const existingDocument = await collection.findOne({
+      $expr: {
+        $eq: [
+          { $toLower: { $replaceAll: { input: "$fmsName", find: " ", replacement: "" } } },
+          formattedFmsName
+        ]
+      }
+    });
 
-
-
-      // console.log(req.headers.authorization)
-      // const authHeader = req.headers.authorization;
-      // if (!authHeader || !authHeader.startsWith("Bearer")) {
-      //   console.log("error: Authorization header missing or malformed");
-      //   errorLogger.log("error", `Token ${req.headers.authorization} is un-authorized as authorization header missing or malformed for api fmsStep1`);
-      //   return res.status(401).json({ error: 'Unauthorized' });
-      // }
-      // const token = authHeader.split(" ")[1];
-      // infoLogger.log("info", `token ${token} is verified successfuly for the api fmsStep1`);
-      // console.log('token fetched is ' , token)
-
-
-      //   const instance = axios.create({
-      //     httpsAgent: new (require('https').Agent)({
-      //       rejectUnauthorized: false
-      //     })
-      //   });
-      //   const response = await instance.post(process.env.MAIN_BE_URL, { token: token })
-      //   .then(response => {
-      //   //console.log('Fetched User Details and Company Details', response.data);
-      //   userName = response.data.emp_name;
-      //   userID = response.data.user_id;
-      //   companyUrl = response.data.verify_company_url;
-      //   userEmail = response.data.email_id;
-      //   })
-      //   .catch(error => {
-      //    console.error('Error:', error);
-      //   });
-      //   console.log("userName" , userName)
-      //   console.log("userID" , userID)
-      //   console.log("companyUrl" , companyUrl)
-      //   console.log("userEmail" , userEmail)
-
-
-
-    try {
-        // Connect to MongoDB and perform operations
-        const client = await MongoClient.connect(process.env.MONGO_DB_STRING);
-        console.log('Connected to database');
-        const db = client.db(companyUrl);
-        const collection = db.collection('fmsMaster');
-        infoLogger.log("info", `${userName} from company ${companyUrl} hit the api fmsStep1`)
-
-         // Convert req.body.fmsName to lowercase and remove spaces
-       const formattedFmsName = req.body.fmsName.toLowerCase().replace(/\s+/g, '');
- 
-       // Check if fmsName already exists in the collection (case-insensitive, ignoring spaces)
-       const existingDocument = await collection.findOne({
-           $expr: {
-               $eq: [
-                   { $toLower: { $replaceAll: { input: "$fmsName", find: " ", replacement: "" } } },
-                   formattedFmsName
-               ]
-           }
-       });
- 
-       if (existingDocument) {
-           await client.close();
-           errorLogger.log("error" , `${userName} failed to create step1 fms title ${req.body.fmsName} already exists `);
-           return res.status(400).json({ error: "The FMS Title already exists", status: 400 });
-       }
-
-        // Find the last inserted document and get its incremental value
-        const lastDocument = await collection.find().sort({ _id: -1 }).limit(1).toArray();
-        let fmsMasterId = 1;
-
-        if (lastDocument.length > 0) {
-            fmsMasterId = lastDocument[0].fmsMasterId + 1;
-        }
-
-        //console.log("token",token);
-        ////Fetch process details
-        const instance = axios.create({httpsAgent: new (require('https').Agent)({ rejectUnauthorized: false }) });
-        const processDetailsResponse = await instance.post(process.env.MAIN_BE_PROCESS_URL, {
-          p_id: req.body.fmsProcess,
-          verify_company_url: companyUrl
-      });
-
-   //console.log( processDetailsResponse.data.result);
-
-   const currentDate = moment().tz('Asia/Kolkata').format();
-
-        // Inserting data into the collection
-        const result = await collection.insertOne({
-            fmsMasterId,
-            fmsCreatedBy: { userID: userID, userEmail: userEmail, userName: userName },
-            fmsName: req.body.fmsName,
-            fmsDescription: req.body.fmsDescription,
-            //fmsProcess: req.body.fmsProcess
-            fmsProcess: processDetailsResponse.data.result[0],
-            noOfLive : 0,
-            creationDate: currentDate
-        });
-
-        //added return 
-
-        // Retrieve the inserted document using its _id
-        const insertedDocument = await collection.findOne({ _id: result.insertedId });
-
-        console.log(insertedDocument);
-        infoLogger.log("info", `${userName} is creating step1 by inserting data with ${JSON.stringify(req.body)}.Based on the request,step1 is created with the data ${JSON.stringify(insertedDocument)}`)
-        res.json({
-            "message": `${req.body.fmsName} Step 1 is Successfully Created`,
-            "status": 200,
-            "data": insertedDocument // Include the inserted document in the response
-        });
-
-        console.log(result);
-        // res.json({
-        //     "message": `${req.body.fmsName} Step 1 is Successfully Created`,
-        //     "status": 200
-        // });
-
-        // Close the MongoDB connection
-        await client.close();
-        console.log('MongoDB connection closed');
-    } catch (error) {
-        console.error('Error Connecting to MongoDB', error);
-        errorLogger.log("error" , `${userName} failed to create step1 due to ${error.message}`);
-        return res.status(500).send({ error: error.message, status: 500 });
+    if (existingDocument) {
+      await client.close();
+      errorLogger.log("error", `${userName} failed to create step1 fms title ${req.body.fmsName} already exists `);
+      return res.status(400).json({ error: "The FMS Title already exists", status: 400 });
     }
+
+    // Find the last inserted document and get its incremental value
+    const lastDocument = await collection.find().sort({ _id: -1 }).limit(1).toArray();
+    let fmsMasterId = 1;
+
+    if (lastDocument.length > 0) {
+      fmsMasterId = lastDocument[0].fmsMasterId + 1;
+    }
+
+    ////Fetch process details
+    const instance = axios.create({ httpsAgent: new (require('https').Agent)({ rejectUnauthorized: false }) });
+    const processDetailsResponse = await instance.post(process.env.MAIN_BE_PROCESS_URL, {
+      p_id: req.body.fmsProcess,
+      verify_company_url: companyUrl
+    });
+
+    //console.log( processDetailsResponse.data.result);
+
+    const currentDate = moment().tz('Asia/Kolkata').format();
+    // Inserting data into the collection
+    const result = await collection.insertOne({
+      fmsMasterId,
+      fmsCreatedBy: { userID: userID, userEmail: userEmail, userName: userName },
+      fmsName: req.body.fmsName,
+      fmsDescription: req.body.fmsDescription,
+      //fmsProcess: req.body.fmsProcess
+      fmsProcess: processDetailsResponse.data.result[0],
+      noOfLive: 0,
+      creationDate: currentDate
+    });
+
+    // Retrieve the inserted document using its _id
+    const insertedDocument = await collection.findOne({ _id: result.insertedId });
+
+    console.log(insertedDocument);
+    infoLogger.log("info", `${userName} is creating step1 by inserting data with ${JSON.stringify(req.body)}.Based on the request,step1 is created with the data ${JSON.stringify(insertedDocument)}`)
+    res.json({
+      "message": `${req.body.fmsName} Step 1 is Successfully Created`,
+      "status": 200,
+      "data": insertedDocument // Include the inserted document in the response
+    });
+
+    console.log(result);
+
+    // Close the MongoDB connection
+    await client.close();
+    console.log('MongoDB connection closed');
+  } catch (error) {
+    console.error('Error Connecting to MongoDB', error);
+    errorLogger.log("error", `${userName} failed to create step1 due to ${error.message}`);
+    return res.status(500).send({ error: error.message, status: 500 });
+  }
 });
 
 

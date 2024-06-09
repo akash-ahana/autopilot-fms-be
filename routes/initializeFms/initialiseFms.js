@@ -26,7 +26,7 @@ initialiseFms.post('/fmsStep1', async (req, res) => {
       infoLogger.log("info", `token ${token} is verified successfuly for the api fmsStep1`);
       console.log('token fetched is ' , token)
 
-    try {
+    //try {
         // Fetch user details and company details based on the token
         const instance = axios.create({
           httpsAgent: new (require('https').Agent)({
@@ -53,11 +53,11 @@ initialiseFms.post('/fmsStep1', async (req, res) => {
       //  companyUrl = response.data.verify_company_url;
       //  userEmail = response.data.email_id;
         //infoLogger.log("info", `${JSON.stringify(response.data)} logged in autopilot fms`)
-    } catch (error) {
-        console.error('Error posting data:', error);
-        errorLogger.log("error",`Failed to fetch user details due to ${error.message}`)
-         return res.status(500).send({ error: 'Error fetching user details', status: 500 });
-    }
+   // } catch (error) {
+    //    console.error('Error posting data:', error);
+    //    errorLogger.log("error",`Failed to fetch user details due to ${error.message}`)
+    //     return res.status(500).send({ error: 'Error fetching user details', status: 500 });
+   // }
 
     console.log("userName" , userName)
     console.log("userID" , userID)

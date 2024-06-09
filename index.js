@@ -44,19 +44,19 @@ console.error('Error Connecting to MongoDB' , error)
 })    
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-const getUserDetails = require('./routes/user/user'); 
-app.post('/tokenCheck', function (req, res) {
-  console.log(req.body.token)
-  axios.post(process.env.MAIN_BE_URL, {token : req.body.token})
-    .then(response => {
-      console.log('Data posted successfully:', response.data);
-      res.send(response.data); // Return the response data
-    })
-    .catch(error => {
-      console.error('Error posting data:', error);
-      res.send(error); // Rethrow the error to be handled by the caller
-    });
-}) 
+// const getUserDetails = require('./routes/user/user'); 
+// app.post('/tokenCheck', function (req, res) {
+//   console.log(req.body.token)
+//   axios.post(process.env.MAIN_BE_URL, {token : req.body.token})
+//     .then(response => {
+//       console.log('Data posted successfully:', response.data);
+//       res.send(response.data); // Return the response data
+//     })
+//     .catch(error => {
+//       console.error('Error posting data:', error);
+//       res.send(error); // Rethrow the error to be handled by the caller
+//     });
+// }) 
 
 // app.post('/submitFMSQuestionare', function (req, res) {
   
@@ -102,8 +102,8 @@ app.post('/tokenCheck', function (req, res) {
 
 
 //--GET FMS------------------------------------------------------------//
-const getFms = require("./routes/getFms/getFms");
-app.use("/getFms", getFms);
+// const getFms = require("./routes/getFms/getFms");
+// app.use("/getFms", getFms);
 
 
 //--FMS INITIALISATION--------------------------------------------------//
@@ -112,54 +112,54 @@ app.use("/fmsInitilisation", fmsInitilisation);
 
 
 //--AWS S3-------------------------------------------------------------//
-const aws = require("./routes/s3Functions/awsS3functions");
-app.use("/awsS3", aws);
-//--------------------------------------------------------------------//
-const submitQA = require("./routes/submitFmsQuestionare");
-app.use("/submitQA", submitQA);
-//---------------------------------------------------------------------//
-const getFmsTasks = require("./routes/getFmsTasks/getFmsTasks");
-app.use("/getFmsTasks", getFmsTasks);
+// const aws = require("./routes/s3Functions/awsS3functions");
+// app.use("/awsS3", aws);
+// //--------------------------------------------------------------------//
+// const submitQA = require("./routes/submitFmsQuestionare");
+// app.use("/submitQA", submitQA);
+// //---------------------------------------------------------------------//
+// const getFmsTasks = require("./routes/getFmsTasks/getFmsTasks");
+// app.use("/getFmsTasks", getFmsTasks);
 
-//----------------------------------------------------------------------//
-const updateTask = require("./routes/updateFmsTask");
-app.use("/updateTask", updateTask);
+// //----------------------------------------------------------------------//
+// const updateTask = require("./routes/updateFmsTask");
+// app.use("/updateTask", updateTask);
 
-//----------------------------------------------------------------------//
-const transferFmsTask = require("./routes/transferFmsTask");
-app.use("/transferFmsTask", transferFmsTask);
+// //----------------------------------------------------------------------//
+// const transferFmsTask = require("./routes/transferFmsTask");
+// app.use("/transferFmsTask", transferFmsTask);
 
-//----------------------------------------------------------------------//
-const fmsTasksPerformance = require("./routes/fmsTasksPerformanceCalculation");
-app.use("/fmsPerformance", fmsTasksPerformance);
+// //----------------------------------------------------------------------//
+// const fmsTasksPerformance = require("./routes/fmsTasksPerformanceCalculation");
+// app.use("/fmsPerformance", fmsTasksPerformance);
 
-//----------------------------------------------------------------------//
-const dbCreation = require("./routes/dbCreate");
-app.use("/dbCreate", dbCreation);
+// //----------------------------------------------------------------------//
+// const dbCreation = require("./routes/dbCreate");
+// app.use("/dbCreate", dbCreation);
 
-//----------------------------------------------------------------------//
-const getfilterDoer = require("./routes/fmsFilter/getFilterDoer");
-app.use("/getfilterDoer", getfilterDoer);
+// //----------------------------------------------------------------------//
+// const getfilterDoer = require("./routes/fmsFilter/getFilterDoer");
+// app.use("/getfilterDoer", getfilterDoer);
 
-//----------------------------------------------------------------------//
-const getfilterAdmin = require("./routes/fmsFilter/getFilterAdmin");
-app.use("/getfilterAdmin", getfilterAdmin);
+// //----------------------------------------------------------------------//
+// const getfilterAdmin = require("./routes/fmsFilter/getFilterAdmin");
+// app.use("/getfilterAdmin", getfilterAdmin);
 
-//----------------------------------------------------------------------//
-const getfilterPC = require("./routes/fmsFilter/getFilterPc");
-app.use("/getfilterPC", getfilterPC);
+// //----------------------------------------------------------------------//
+// const getfilterPC = require("./routes/fmsFilter/getFilterPc");
+// app.use("/getfilterPC", getfilterPC);
 
-//----------------------------------------------------------------------//
-const fmsdataanalytics = require("./routes/fmsDataAnalytics");
-app.use("/fmsdataanalytics", fmsdataanalytics);
+// //----------------------------------------------------------------------//
+// const fmsdataanalytics = require("./routes/fmsDataAnalytics");
+// app.use("/fmsdataanalytics", fmsdataanalytics);
 
-//----------------------------------------------------------------------//
-const updateQualitySteps = require("./routes/updateQualityStep");
-app.use("/updateQualitySteps", updateQualitySteps);
+// //----------------------------------------------------------------------//
+// const updateQualitySteps = require("./routes/updateQualityStep");
+// app.use("/updateQualitySteps", updateQualitySteps);
 
-//----------------------------------------------------------------------//
-const fmsStatusWhatsapp = require("./routes/fmsSendStatus");
-app.use("/fmsStatusWhatsapp", fmsStatusWhatsapp);
+// //----------------------------------------------------------------------//
+// const fmsStatusWhatsapp = require("./routes/fmsSendStatus");
+// app.use("/fmsStatusWhatsapp", fmsStatusWhatsapp);
 
 
 

@@ -18,7 +18,7 @@ async function fetchUserDetails(authHeader) {
         return res.status(401).json({ error: 'Unauthorized' });
       }
       const token = authHeader.split(" ")[1];
-      infoLogger.log("info", `token ${token} is verified successfuly for the api fmsStep1`);
+      //infoLogger.log("info", `token ${token} is verified successfuly for the api fmsStep1`);
       console.log('token fetched is ' , token)
 
 

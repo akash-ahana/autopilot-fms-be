@@ -1,4 +1,5 @@
 const axios = require('axios');
+const { infoLogger, errorLogger } = require("../middleware/logger");
 
 async function fetchUserDetails(authHeader) {
 
@@ -7,7 +8,7 @@ async function fetchUserDetails(authHeader) {
      let userID = "";
      let companyUrl = "";
      let userEmail = "";
-     
+
     console.log('Iniside the Get User Details Function')
     console.log(authHeader)
       //const authHeader = req.headers.authorization;

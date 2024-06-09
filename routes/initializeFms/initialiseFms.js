@@ -36,18 +36,18 @@ initialiseFms.post('/fmsStep1', async (req, res) => {
 
         const response = await instance.post(process.env.MAIN_BE_URL, { token: token })
         .then(response => {
-          console.log(response.data);
+          //console.log(response.data);
           console.log('Fetched User Details and Company Details', response.data);
-        userName = response.data.emp_name;
-        userID = response.data.user_id;
-        companyUrl = response.data.verify_company_url;
-        userEmail = response.data.email_id;
+        //userName = response.data.emp_name;
+        //userID = response.data.user_id;
+        //companyUrl = response.data.verify_company_url;
+        //userEmail = response.data.email_id;
         })
         .catch(error => {
           console.error('Error:', error);
         });
         //const response = await axios.post(process.env.MAIN_BE_URL, { token: token });
-        console.log('Fetched User Details and Company Details', response.data);
+        console.log('Fetched User Details and Company Details outside catch block', response.data);
         userName = response.data.emp_name;
         userID = response.data.user_id;
         companyUrl = response.data.verify_company_url;

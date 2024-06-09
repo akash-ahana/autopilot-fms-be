@@ -4,6 +4,7 @@ var MongoClient = require('mongodb').MongoClient;
 const axios = require('axios');
 const moment = require('moment-timezone');
 const { infoLogger, errorLogger } = require("../../middleware/logger");
+const { fetchUserDetails } = require('../../helpers/fetchuserDetails');
 
 initialiseFms.post('/fmsStep1', async (req, res) => {
     console.log("Fms Step 1 API hit");
@@ -15,54 +16,52 @@ initialiseFms.post('/fmsStep1', async (req, res) => {
     let companyUrl = "";
     let userEmail = "";
 
-    console.log(req.headers.authorization)
-      const authHeader = req.headers.authorization;
-      if (!authHeader || !authHeader.startsWith("Bearer")) {
-        console.log("error: Authorization header missing or malformed");
-        errorLogger.log("error", `Token ${req.headers.authorization} is un-authorized as authorization header missing or malformed for api fmsStep1`);
-        return res.status(401).json({ error: 'Unauthorized' });
-      }
-      const token = authHeader.split(" ")[1];
-      infoLogger.log("info", `token ${token} is verified successfuly for the api fmsStep1`);
-      console.log('token fetched is ' , token)
+    let userDetails = await fetchUserDetails(req.headers.authorization);
 
-    //try {
-        // Fetch user details and company details based on the token
-        const instance = axios.create({
-          httpsAgent: new (require('https').Agent)({
-            rejectUnauthorized: false
-          })
-        });
+        userName = userDetails.userName;
+        userID = userDetails.userID;
+        companyUrl = userDetails.companyUrl;
+        userEmail = userDetails.userEmail;
 
-        const response = await instance.post(process.env.MAIN_BE_URL, { token: token })
-        .then(response => {
-          console.log(response.data);
-         console.log('Fetched User Details and Company Details', response.data);
-        userName = response.data.emp_name;
-        userID = response.data.user_id;
-        companyUrl = response.data.verify_company_url;
-        userEmail = response.data.email_id;
-        })
-        .catch(error => {
-         console.error('Error:', error);
-        });
-       // const response = await axios.post(process.env.MAIN_BE_URL, { token: token });
-       // console.log('Fetched User Details and Company Details outside catch block', response.data);
-       // userName = response.data.emp_name;
-       // userID = response.data.user_id;
-      //  companyUrl = response.data.verify_company_url;
-      //  userEmail = response.data.email_id;
-        //infoLogger.log("info", `${JSON.stringify(response.data)} logged in autopilot fms`)
-   // } catch (error) {
-    //    console.error('Error posting data:', error);
-    //    errorLogger.log("error",`Failed to fetch user details due to ${error.message}`)
-    //     return res.status(500).send({ error: 'Error fetching user details', status: 500 });
-   // }
+        console.log("userName" , userDetails.userName)
+        console.log("userID" , userDetails.userID)
+        console.log("companyUrl" , userDetails.companyUrl)
+        console.log("userEmail" , userDetails.userEmail)
 
-    console.log("userName" , userName)
-    console.log("userID" , userID)
-    console.log("companyUrl" , companyUrl)
-    console.log("userEmail" , userEmail)
+
+
+      // console.log(req.headers.authorization)
+      // const authHeader = req.headers.authorization;
+      // if (!authHeader || !authHeader.startsWith("Bearer")) {
+      //   console.log("error: Authorization header missing or malformed");
+      //   errorLogger.log("error", `Token ${req.headers.authorization} is un-authorized as authorization header missing or malformed for api fmsStep1`);
+      //   return res.status(401).json({ error: 'Unauthorized' });
+      // }
+      // const token = authHeader.split(" ")[1];
+      // infoLogger.log("info", `token ${token} is verified successfuly for the api fmsStep1`);
+      // console.log('token fetched is ' , token)
+
+
+      //   const instance = axios.create({
+      //     httpsAgent: new (require('https').Agent)({
+      //       rejectUnauthorized: false
+      //     })
+      //   });
+      //   const response = await instance.post(process.env.MAIN_BE_URL, { token: token })
+      //   .then(response => {
+      //   //console.log('Fetched User Details and Company Details', response.data);
+      //   userName = response.data.emp_name;
+      //   userID = response.data.user_id;
+      //   companyUrl = response.data.verify_company_url;
+      //   userEmail = response.data.email_id;
+      //   })
+      //   .catch(error => {
+      //    console.error('Error:', error);
+      //   });
+      //   console.log("userName" , userName)
+      //   console.log("userID" , userID)
+      //   console.log("companyUrl" , companyUrl)
+      //   console.log("userEmail" , userEmail)
 
 
 

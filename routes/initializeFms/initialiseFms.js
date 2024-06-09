@@ -102,6 +102,7 @@ initialiseFms.post('/fmsStep1', async (req, res) => {
 
         //console.log("token",token);
         ////Fetch process details
+        const instance = axios.create({httpsAgent: new (require('https').Agent)({ rejectUnauthorized: false }) });
         const processDetailsResponse = await instance.post(process.env.MAIN_BE_PROCESS_URL, {
           p_id: req.body.fmsProcess,
           verify_company_url: companyUrl

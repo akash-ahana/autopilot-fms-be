@@ -22,11 +22,7 @@ async function fetchUserDetails(authHeader) {
       console.log('token fetched is ' , token)
 
 
-        const instance = axios.create({
-          httpsAgent: new (require('https').Agent)({
-            rejectUnauthorized: false
-          })
-        });
+        const instance = axios.create({httpsAgent: new (require('https').Agent)({ rejectUnauthorized: false }) });
         const response = await instance.post(process.env.MAIN_BE_URL, { token: token })
         .then(response => {
         //console.log('Fetched User Details and Company Details', response.data);

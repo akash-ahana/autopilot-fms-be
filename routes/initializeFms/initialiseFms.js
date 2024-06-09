@@ -100,7 +100,7 @@ initialiseFms.post('/fmsStep1', async (req, res) => {
             fmsMasterId = lastDocument[0].fmsMasterId + 1;
         }
 
-        console.log("token",token);
+        //console.log("token",token);
         ////Fetch process details
         const processDetailsResponse = await instance.post(process.env.MAIN_BE_PROCESS_URL, {
           p_id: req.body.fmsProcess,

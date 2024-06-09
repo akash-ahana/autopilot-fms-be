@@ -4,6 +4,7 @@ var MongoClient = require("mongodb").MongoClient;
 const axios = require("axios");
 const { ObjectId } = require("mongodb");
 const moment = require('moment-timezone');
+const { fetchUserDetails } = require('../helpers/fetchuserDetails');
 
 // transfer FMS using
 transferFmsTask.post("/transferFmsTask", async (req, res) => {
@@ -12,34 +13,12 @@ transferFmsTask.post("/transferFmsTask", async (req, res) => {
   console.log('INSIDE TRANSFER FMS TASK ----------------------------------------------------')
   console.log(req.body)
   // Initialize variables to hold user details
-  let userName = "";
-  let userID = "";
-  let companyUrl = "";
-  let userEmail = "";
+  let userDetails = await fetchUserDetails(req.headers.authorization);
+  let userName = userDetails.userName;
+  let userID = userDetails.userID;
+  let companyUrl = userDetails.companyUrl;
+  let userEmail = userDetails.userEmail;
 
-  console.log(req.headers.authorization)
-  const authHeader = req.headers.authorization;
-  if (!authHeader || !authHeader.startsWith("Bearer")) {
-    //console.log("error: Authorization header missing or malformed");
-    return res.status(401).json({ error: 'Unauthorized' });
-  }
-  const token = authHeader.split(" ")[1];
-
-  //console.log('token fetched is ' , token)
-
-  try {
-    // Fetch user details and company details based on the token
-    const response = await axios.post(process.env.MAIN_BE_URL, { token: token });
-    //console.log('Fetched User Details and Company Details', response.data);
-    userName = response.data.emp_name;
-    userID = response.data.user_id;
-    companyUrl = response.data.verify_company_url;
-    userEmail = response.data.email_id;
-  } catch (error) {
-    //console.error('Error posting data:', error);
-    res.status(500).send({ error: "Error fetching user details", status: 500 });
-    return;
-  }
 
   //try catch block to create a newFmsTask for the new Doer
   try {

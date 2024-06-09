@@ -4,33 +4,14 @@ var MongoClient = require('mongodb').MongoClient;
 const axios = require('axios');
 
 getfilterPC.get('/getfilterPC', async (req, res) => {
-    let userName = "";
-    let userID = "";
-    let companyUrl = "";
-    let userEmail = "";
+
   
-    // Check for authorization header
-    const authHeader = req.headers.authorization;
-    if (!authHeader || !authHeader.startsWith("Bearer ")) {
-      console.log("Error: Authorization header missing or malformed");
-      return res.status(401).json({ error: "Unauthorized" });
-    }
-    const token = authHeader.split(" ")[1];
-  
-    console.log("Token fetched is", token);
-  
-    try {
-      // Fetch user details and company details based on the token
-      const response = await axios.post(process.env.MAIN_BE_URL, { token });
-      console.log("Fetched User Details and Company Details", response.data);
-      userName = response.data.emp_name;
-      userID = response.data.user_id;
-      companyUrl = response.data.verify_company_url;
-      userEmail = response.data.email_id;
-    } catch (error) {
-      console.error("Error posting data:", error);
-      return res.status(500).json({ error: error.message });
-    }
+  let userDetails = await fetchUserDetails(req.headers.authorization);
+  let userName = userDetails.userName;
+  let userID = userDetails.userID;
+  let companyUrl = userDetails.companyUrl;
+  let userEmail = userDetails.userEmail;
+
   
     // Use userID as employeeId
     const processCoordinatorId = userID;

@@ -2,38 +2,16 @@ const express = require("express");
 const getFms = express.Router();
 var MongoClient = require('mongodb').MongoClient;
 const axios = require('axios');
+const { fetchUserDetails } = require('../../helpers/fetchuserDetails');
 
 //find  Single FMS using FMS Name
 getFms.post('/findSingleFms' , async (req, res) => {
     
-    // Initialize variables to hold user details
-    let userName = "";
-    let userID = "";
-    let companyUrl = "";
-    let userEmail = "";
-
-    console.log(req.headers.authorization)
-      const authHeader = req.headers.authorization;
-      if (!authHeader || !authHeader.startsWith("Bearer")) {
-        console.log("error: Authorization header missing or malformed");
-        return res.status(401).json({ error: 'Unauthorized' });
-      }
-      const token = authHeader.split(" ")[1];
-
-      console.log('token fetched is ' , token)
-
-      try {
-        // Fetch user details and company details based on the token
-        const response = await axios.post(process.env.MAIN_BE_URL, { token: token });
-        console.log('Fetched User Details and Company Details', response.data);
-        userName = response.data.emp_name;
-        userID = response.data.user_id;
-        companyUrl = response.data.verify_company_url;
-        userEmail = response.data.email_id;
-    } catch (error) {
-        console.error('Error posting data:', error);
-        return res.status(500).json({ error: error.message });
-    }
+  let userDetails = await fetchUserDetails(req.headers.authorization);
+  let userName = userDetails.userName;
+  let userID = userDetails.userID;
+  let companyUrl = userDetails.companyUrl;
+  let userEmail = userDetails.userEmail;
 
     try {
 
@@ -62,34 +40,11 @@ getFms.post('/findSingleFms' , async (req, res) => {
 //find ALL FMS 
 getFms.get('/findAllFms' , async (req, res) => {
    
-    // Initialize variables to hold user details
-    let userName = "";
-    let userID = "";
-    let companyUrl = "";
-    let userEmail = "";
-
-    console.log(req.headers.authorization)
-      const authHeader = req.headers.authorization;
-      if (!authHeader || !authHeader.startsWith("Bearer")) {
-        console.log("error: Authorization header missing or malformed");
-        return res.status(401).json({ error: 'Unauthorized' });
-      }
-      const token = authHeader.split(" ")[1];
-
-      console.log('token fetched is ' , token)
-
-      try {
-        // Fetch user details and company details based on the token
-        const response = await axios.post(process.env.MAIN_BE_URL, { token: token });
-        console.log('Fetched User Details and Company Details', response.data);
-        userName = response.data.emp_name;
-        userID = response.data.user_id;
-        companyUrl = response.data.verify_company_url;
-        userEmail = response.data.email_id;
-    } catch (error) {
-        console.error('Error posting data:', error);
-        return res.status(500).json({ error: error.message });
-    }
+  let userDetails = await fetchUserDetails(req.headers.authorization);
+  let userName = userDetails.userName;
+  let userID = userDetails.userID;
+  let companyUrl = userDetails.companyUrl;
+  let userEmail = userDetails.userEmail;
 
     try {
         // Connect to MongoDB and perform operations
@@ -118,34 +73,13 @@ getFms.get('/findAllFms' , async (req, res) => {
 
 //find all fms and their forms the user has access to 
 getFms.get('/findFmsQuestionaresForUser' , async (req, res) => {
-    // Initialize variables to hold user details
-    let userName = "";
-    let userID = "";
-    let companyUrl = "";
-    let userEmail = "";
 
-    console.log(req.headers.authorization)
-      const authHeader = req.headers.authorization;
-      if (!authHeader || !authHeader.startsWith("Bearer")) {
-        console.log("error: Authorization header missing or malformed");
-        return res.status(401).json({ error: 'Unauthorized' });
-      }
-      const token = authHeader.split(" ")[1];
 
-      console.log('token fetched is ' , token)
-
-      try {
-        // Fetch user details and company details based on the token
-        const response = await axios.post(process.env.MAIN_BE_URL, { token: token });
-        console.log('Fetched User Details and Company Details', response.data);
-        userName = response.data.emp_name;
-        userID = response.data.user_id;
-        companyUrl = response.data.verify_company_url;
-        userEmail = response.data.email_id;
-    } catch (error) {
-        console.error('Error posting data:', error);
-        return res.status(500).json({ error: error.message });
-    }
+  let userDetails = await fetchUserDetails(req.headers.authorization);
+  let userName = userDetails.userName;
+  let userID = userDetails.userID;
+  let companyUrl = userDetails.companyUrl;
+  let userEmail = userDetails.userEmail;
 
     try {
 
@@ -202,34 +136,12 @@ getFms.get('/findFmsQuestionaresForUser' , async (req, res) => {
 getFms.post('/findPreviousStepsDetails' , async (req, res) => {
    console.log(' inside /findPreviousStepsDetails')
    console.log(req.body)
-    // Initialize variables to hold user details
-    let userName = "";
-    let userID = "";
-    let companyUrl = "";
-    let userEmail = "";
 
-    console.log(req.headers.authorization)
-      const authHeader = req.headers.authorization;
-      if (!authHeader || !authHeader.startsWith("Bearer")) {
-        console.log("error: Authorization header missing or malformed");
-        return res.status(401).json({ error: 'Unauthorized' });
-      }
-      const token = authHeader.split(" ")[1];
-
-      console.log('token fetched is ' , token)
-
-      try {
-        // Fetch user details and company details based on the token
-        const response = await axios.post(process.env.MAIN_BE_URL, { token: token });
-        console.log('Fetched User Details and Company Details', response.data);
-        userName = response.data.emp_name;
-        userID = response.data.user_id;
-        companyUrl = response.data.verify_company_url;
-        userEmail = response.data.email_id;
-    } catch (error) {
-        console.error('Error posting data:', error);
-        return res.status(500).json({ error: error.message });;
-    }
+    let userDetails = await fetchUserDetails(req.headers.authorization);
+  let userName = userDetails.userName;
+  let userID = userDetails.userID;
+  let companyUrl = userDetails.companyUrl;
+  let userEmail = userDetails.userEmail;
 
     try {
         // Connect to MongoDB and perform operations
@@ -282,33 +194,11 @@ getFms.post('/findNextStepsDetails' , async (req, res) => {
   console.log(' inside /findPreviousStepsDetails')
   console.log(req.body)
    // Initialize variables to hold user details
-   let userName = "";
-   let userID = "";
-   let companyUrl = "";
-   let userEmail = "";
-
-   console.log(req.headers.authorization)
-     const authHeader = req.headers.authorization;
-     if (!authHeader || !authHeader.startsWith("Bearer")) {
-       console.log("error: Authorization header missing or malformed");
-       return res.status(401).json({ error: 'Unauthorized' });
-     }
-     const token = authHeader.split(" ")[1];
-
-     console.log('token fetched is ' , token)
-
-     try {
-       // Fetch user details and company details based on the token
-       const response = await axios.post(process.env.MAIN_BE_URL, { token: token });
-       console.log('Fetched User Details and Company Details', response.data);
-       userName = response.data.emp_name;
-       userID = response.data.user_id;
-       companyUrl = response.data.verify_company_url;
-       userEmail = response.data.email_id;
-   } catch (error) {
-       console.error('Error posting data:', error);
-       return res.status(500).json({ error: error.message });;
-   }
+   let userDetails = await fetchUserDetails(req.headers.authorization);
+  let userName = userDetails.userName;
+  let userID = userDetails.userID;
+  let companyUrl = userDetails.companyUrl;
+  let userEmail = userDetails.userEmail;
 
    try {
        // Connect to MongoDB and perform operations
@@ -365,55 +255,11 @@ getFms.post('/findAllDetailsForOneMasterFmstest' , async (req, res) => {
   console.log('inside findAllDetailsForOneMasterFmstest')
     
   // Initialize variables to hold user details
-  let userName = "";
-  let userID = "";
-  let companyUrl = "";
-  let userEmail = "";
-
-  //console.log(req.headers.authorization)
-    const authHeader = req.headers.authorization;
-    if (!authHeader || !authHeader.startsWith("Bearer")) {
-      console.log("error: Authorization header missing or malformed");
-      return res.status(401).json({ error: 'Unauthorized' });
-    }
-    const token = authHeader.split(" ")[1];
-
-    //console.log('token fetched is ' , token)
-
-    try {
-      // Fetch user details and company details based on the token
-      const response = await axios.post(process.env.MAIN_BE_URL, { token: token });
-      //console.log('Fetched User Details and Company Details', response.data);
-      userName = response.data.emp_name;
-      userID = response.data.user_id;
-      companyUrl = response.data.verify_company_url;
-      userEmail = response.data.email_id;
-  } catch (error) {
-      //console.error('Error posting data:', error);
-      return res.status(500).json({ error: error.message });
-  }
-
-  //find the requested FMS
-  // let requestedFms;
-  // try {
-  //     // Connect to MongoDB and perform operations
-  //     const client = await MongoClient.connect(process.env.MONGO_DB_STRING);
-  //     //console.log('Connected to database');
-  //     const db = client.db(companyUrl);
-  //     const collection = db.collection('fmsMaster');
-
-  //     // Fething data into from the  collection
-  //     const query = { fmsMasterId: req.body.fmsMasterId };
-  //     requestedFms = await collection.findOne(query);
-
-  //     //console.log('Requested Fms' , requestedFms)
-  //     console.log(requestedFms)
-      
-
-  // } catch (error) {
-  //     //console.error('Error Connecting to MongoDB', error);
-  //     res.status(500).send({ error: `${req.body.fmsName}  NOT found`, status: 500 });
-  // }
+  let userDetails = await fetchUserDetails(req.headers.authorization);
+  let userName = userDetails.userName;
+  let userID = userDetails.userID;
+  let companyUrl = userDetails.companyUrl;
+  let userEmail = userDetails.userEmail;
 
   //find the masterfms document that is requested
   let fmsMasterDocument;

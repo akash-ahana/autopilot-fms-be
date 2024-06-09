@@ -102,95 +102,66 @@ initialiseFms.post('/editFmsStep1', async (req, res) => {
   console.log(" Edit Fms Step 1 API hit");
   console.log(req.body);
 
-  // Initialize variables to hold user details
-  let userName = "";
-  let userID = "";
-  let companyUrl = "";
-  let userEmail = "";
-
-  console.log(req.headers.authorization)
-    const authHeader = req.headers.authorization;
-    if (!authHeader || !authHeader.startsWith("Bearer")) {
-      console.log("error: Authorization header missing or malformed");
-      errorLogger.log("error", `Token ${req.headers.authorization} is un-authorized as authorization header missing or malformed for api editFmsStep`);
-      return res.status(401).json({ error: 'Unauthorized' });
-    }
-    const token = authHeader.split(" ")[1];
-    infoLogger.log("info", `token ${token} is verified successfuly for the api editFmsStep1`);
-    console.log('token fetched is ' , token)
+  let userDetails = await fetchUserDetails(req.headers.authorization);
+  let userName = userDetails.userName;
+  let userID = userDetails.userID;
+  let companyUrl = userDetails.companyUrl;
+  let userEmail = userDetails.userEmail;
 
   try {
-      // Fetch user details and company details based on the token
-      const response = await axios.post(process.env.MAIN_BE_URL, { token: token });
-      console.log('Fetched User Details and Company Details', response.data);
-      userName = response.data.emp_name;
-      userID = response.data.user_id;
-      companyUrl = response.data.verify_company_url;
-      userEmail = response.data.email_id;
-      infoLogger.log("info", `${JSON.stringify(response.data)} logged in autopilot fms`)
-  } catch (error) {
-      console.error('Error posting data:', error);
-      errorLogger.log("error",`Failed to fetch user details due to ${error.message}`)
-       return res.status(500).send({ error: 'Error fetching user details', status: 500 });
-      
-  }
+    // Connect to MongoDB and perform operations
+    const client = await MongoClient.connect(process.env.MONGO_DB_STRING);
+    console.log('Connected to database');
+    const db = client.db(companyUrl);
+    const collection = db.collection('fmsMaster');
+    infoLogger.log("info", `${userName} from company ${companyUrl}  hit the api editFmsStep1`)
 
-  try {
-      // Connect to MongoDB and perform operations
-      const client = await MongoClient.connect(process.env.MONGO_DB_STRING);
-      console.log('Connected to database');
-      const db = client.db(companyUrl);
-      const collection = db.collection('fmsMaster');
-      infoLogger.log("info", `${userName} from company ${companyUrl}  hit the api editFmsStep1`)
-      
-      ////Fetch process details
-      const processDetailsResponse = await axios.post(process.env.MAIN_BE_PROCESS_URL, {
-        p_id: req.body.fmsProcess,
-        verify_company_url: companyUrl
+    ////Fetch process details
+    const instance = axios.create({ httpsAgent: new (require('https').Agent)({ rejectUnauthorized: false }) });
+    const processDetailsResponse = await instance.post(process.env.MAIN_BE_PROCESS_URL, {
+      p_id: req.body.fmsProcess,
+      verify_company_url: companyUrl
     });
 
- //console.log( processDetailsResponse.data.result);
+    //console.log( processDetailsResponse.data.result);
 
- //const currentDate = moment().tz('Asia/Kolkata').format();
+    //const currentDate = moment().tz('Asia/Kolkata').format();
 
-        // Update object
-        const update = {
-          $set: {
-              fmsName: req.body.fmsName,
-              fmsDescription: req.body.fmsDescription,
-              fmsProcessId: req.body.fmsProcessId
-          }
-      };
+    // Update object
+    const update = {
+      $set: {
+        fmsName: req.body.fmsName,
+        fmsDescription: req.body.fmsDescription,
+        fmsProcessId: req.body.fmsProcessId
+      }
+    };
 
-      // Find and update the document
-      const result = await collection.findOneAndUpdate(
-          { fmsMasterId: req.body.fmsMasterId },
-          update,
-          { returnOriginal: false } // returns the updated document
-      );
+    // Find and update the document
+    const result = await collection.findOneAndUpdate(
+      { fmsMasterId: req.body.fmsMasterId },
+      update,
+      { returnOriginal: false } // returns the updated document
+    );
 
-      // if (!result.value) {
-      //     console.log(`Document with fmsMasterId ${req.body.fmsMasterId} not found`);
-      //     return;
-      // }
 
-      console.log('Document updated:', result.value);
-      infoLogger.log("info", `${userName} has updated step1 by requesting data with ${JSON.stringify(req.body)}.Based on the request,step1 is updated with the data ${JSON.stringify(update)}`)
-      res.json({
-          "message": `${req.body.fmsName} Step 1 is Successfully Edited`,
-          "status": 200,
-          "data": result // Include the updated document in the response
-      });
 
-      console.log(result);
+    console.log('Document updated:', result.value);
+    infoLogger.log("info", `${userName} has updated step1 by requesting data with ${JSON.stringify(req.body)}.Based on the request,step1 is updated with the data ${JSON.stringify(update)}`)
+    res.json({
+      "message": `${req.body.fmsName} Step 1 is Successfully Edited`,
+      "status": 200,
+      "data": result // Include the updated document in the response
+    });
 
-      // Close the MongoDB connection
-      await client.close();
-      console.log('MongoDB connection closed');
+    console.log(result);
+
+    // Close the MongoDB connection
+    await client.close();
+    console.log('MongoDB connection closed');
   } catch (error) {
-      console.error('Error Connecting to MongoDB', error);
-      errorLogger.log("error" , `${userName} failed to update step1 due to ${error.message}`);
-      return res.status(500).send({ error: error.message, status: 500 });
+    console.error('Error Connecting to MongoDB', error);
+    errorLogger.log("error", `${userName} failed to update step1 due to ${error.message}`);
+    return res.status(500).send({ error: error.message, status: 500 });
   }
 });
 
@@ -199,137 +170,82 @@ initialiseFms.post('/editFmsStep1', async (req, res) => {
 
 
 //Edit FMS -- ADD FMS Access, No Edit Access For Now
-initialiseFms.post('/addFmsUserAccess' , async (req, res) => {
+initialiseFms.post('/addFmsUserAccess', async (req, res) => {
 
-    // Initialize variables to hold user details
-    let userName = "";
-    let userID = "";
-    let companyUrl = "";
-    let userEmail = "";
+  let userDetails = await fetchUserDetails(req.headers.authorization);
+  let userName = userDetails.userName;
+  let userID = userDetails.userID;
+  let companyUrl = userDetails.companyUrl;
+  let userEmail = userDetails.userEmail;
 
-    console.log(req.headers.authorization)
-      const authHeader = req.headers.authorization;
-      if (!authHeader || !authHeader.startsWith("Bearer")) {
-        console.log("error: Authorization header missing or malformed");
-        errorLogger.log("error", `Token ${req.headers.authorization} is un-authorized as authorization header missing or malformed for api addFmsUserAccess`);
-        return res.status(401).json({ error: 'Unauthorized' });
-      }
-      const token = authHeader.split(" ")[1];
-      infoLogger.log("info", `token ${token} is verified successfuly for the api addFmsUserAccess`);
-      console.log('token fetched is ' , token)
+  try {
+    // Connect to MongoDB and perform operations
+    const client = await MongoClient.connect(process.env.MONGO_DB_STRING);
+    console.log('Connected to database');
+    const db = client.db(companyUrl);
+    const collection = db.collection('fmsMaster');
+    infoLogger.log("info", `${userName} from company ${companyUrl}  hit the api addFmsUserAccess`)
+    //const filter = { fmsName : req.body.fmsName };
+    const filter = { fmsMasterId: req.body.fmsMasterId };
+    const update = { $set: { fmsAccess: req.body.fmsUsers } };
+    const options = { upsert: true };
 
-    try {
-        // Fetch user details and company details based on the token
-        const response = await axios.post(process.env.MAIN_BE_URL, { token: token });
-        console.log('Fetched User Details and Company Details', response.data);
-        userName = response.data.emp_name;
-        userID = response.data.user_id;
-        companyUrl = response.data.verify_company_url;
-        userEmail = response.data.email_id;
-        infoLogger.log("info", `${JSON.stringify(response.data)} logged in autopilot fms`)
-    } catch (error) {
-        console.error('Error posting data:', error);
-        errorLogger.log("error",`Failed to fetch user details due to ${error.message}`)
-        return res.status(500).send({ error: 'Error fetching user details', status: 500 });
-       
+    const result = await collection.updateOne(filter, update, options);
+
+    if (result.upsertedCount === 1) {
+      console.log('Document inserted');
+    } else if (result.modifiedCount === 1) {
+      console.log('Document updated');
+    } else {
+      console.log('No changes made to the document');
     }
 
-            try {
-                // Connect to MongoDB and perform operations
-                const client = await MongoClient.connect(process.env.MONGO_DB_STRING);
-                console.log('Connected to database');
-                const db = client.db(companyUrl);
-                const collection = db.collection('fmsMaster');
-                infoLogger.log("info", `${userName} from company ${companyUrl}  hit the api addFmsUserAccess`)
-                //const filter = { fmsName : req.body.fmsName };
-                const filter = { fmsMasterId : req.body.fmsMasterId };
-                const update = { $set: { fmsAccess : req.body.fmsUsers } };
-                const options = { upsert: true };
-                
-                const result = await collection.updateOne(filter, update, options);
-                
-                if (result.upsertedCount === 1) {
-                console.log('Document inserted');
-                } else if (result.modifiedCount === 1) {
-                console.log('Document updated');
-                } else {
-                console.log('No changes made to the document');
-                }
-        
-                console.log(result)
-                infoLogger.log("info", `${userName} assigned FMS Id:${req.body.fmsMasterId} task and provided an access to ${JSON.stringify(req.body.fmsUsers)}`)
-                res.json({
-                    "message" : `${req.body.fmsName} FMS Users is Successfully Added`,
-                    "status" : 200
-                })
-                 // Close the MongoDB connection
-                    await client.close();
-                    console.log('MongoDB connection closed');
-            } 
-            catch (error) {
-                console.error('Error Connecting to MongoDB', error);
-                errorLogger.log("error" , `${userName} failed to provide access due to ${error.message}`);
-                return res.status(500).send({ error: error.message, status: 500 });
-            }
-
-        
+    console.log(result)
+    infoLogger.log("info", `${userName} assigned FMS Id:${req.body.fmsMasterId} task and provided an access to ${JSON.stringify(req.body.fmsUsers)}`)
+    res.json({
+      "message": `${req.body.fmsName} FMS Users is Successfully Added`,
+      "status": 200
     })
+    // Close the MongoDB connection
+    await client.close();
+    console.log('MongoDB connection closed');
+  }
+  catch (error) {
+    console.error('Error Connecting to MongoDB', error);
+    errorLogger.log("error", `${userName} failed to provide access due to ${error.message}`);
+    return res.status(500).send({ error: error.message, status: 500 });
+  }
+
+})
 
 ////////////// ---------------------- Create Questionare ----------------------////////////////////
 
 //file upload, text(string) , dropdown(array of strings) , checkboxes(array of strings) , date (single date)
 
-initialiseFms.post('/createFmsQuestionare' , async (req, res) => {
-    
-    // Initialize variables to hold user details
-    let userName = "";
-    let userID = "";
-    let companyUrl = "";
-    let userEmail = "";
+initialiseFms.post('/createFmsQuestionare', async (req, res) => {
 
-    console.log(req.headers.authorization)
-      const authHeader = req.headers.authorization;
-      if (!authHeader || !authHeader.startsWith("Bearer")) {
-        console.log("error: Authorization header missing or malformed");
-        errorLogger.log("error", `Token ${req.headers.authorization} is un-authorized as authorization header missing or malformed for api createFmsQuestionare`);
-        return res.status(401).json({ error: 'Unauthorized' });
-      }
-      const token = authHeader.split(" ")[1];
-      infoLogger.log("info", `token ${token} is verified successfuly for the api createFmsQuestionare`);
-      console.log('token fetched is ' , token)
+  let userDetails = await fetchUserDetails(req.headers.authorization);
+  let userName = userDetails.userName;
+  let userID = userDetails.userID;
+  let companyUrl = userDetails.companyUrl;
+  let userEmail = userDetails.userEmail;
 
-    try {
-        // Fetch user details and company details based on the token
-        const response = await axios.post(process.env.MAIN_BE_URL, { token: token });
-        console.log('Fetched User Details and Company Details', response.data);
-        userName = response.data.emp_name;
-        userID = response.data.user_id;
-        companyUrl = response.data.verify_company_url;
-        userEmail = response.data.email_id;
-        infoLogger.log("info", `${JSON.stringify(response.data)} logged in autopilot fms`)
-    } catch (error) {
-        console.error('Error posting data:', error);
-        errorLogger.log("error",`Failed to fetch user details due to ${error.message}`)
-        return res.status(500).send({ error: 'Error fetching user details', status: 500 });
-       
-    }
-    
-    try {
+  try {
 
-        // Connect to MongoDB and perform operations
-        const client = await MongoClient.connect(process.env.MONGO_DB_STRING);
-        console.log('Connected to database');
-        const db = client.db(companyUrl);
-        const collection = db.collection('fmsMaster');
-        infoLogger.log("info", `${userName} from company ${companyUrl}  hit the api createFmsQuestionare`)
+    // Connect to MongoDB and perform operations
+    const client = await MongoClient.connect(process.env.MONGO_DB_STRING);
+    console.log('Connected to database');
+    const db = client.db(companyUrl);
+    const collection = db.collection('fmsMaster');
+    infoLogger.log("info", `${userName} from company ${companyUrl}  hit the api createFmsQuestionare`)
 
-        //const filter = { fmsName : req.body.fmsName };
-        const filter = { fmsMasterId : req.body.fmsMasterId };
-        const update = { $set: { fmsQuestionare : req.body.fmsQuestionare } };
-        const options = { upsert: true };
-    
+    //const filter = { fmsName : req.body.fmsName };
+    const filter = { fmsMasterId: req.body.fmsMasterId };
+    const update = { $set: { fmsQuestionare: req.body.fmsQuestionare } };
+    const options = { upsert: true };
+
     const result = await collection.updateOne(filter, update, options);
-    
+
     if (result.upsertedCount === 1) {
       console.log('Document inserted');
     } else if (result.modifiedCount === 1) {
@@ -341,76 +257,48 @@ initialiseFms.post('/createFmsQuestionare' , async (req, res) => {
     console.log(result)
     infoLogger.log("info", `${userName} updating ${JSON.stringify(update)} questionary and successfully updated ${JSON.stringify(result)}`)
     res.json({
-        "message" : `${req.body.fmsName} FMS Questionare is Successfully Added`,
-        "status" : 200
+      "message": `${req.body.fmsName} FMS Questionare is Successfully Added`,
+      "status": 200
     })
 
-        // Close the MongoDB connection
-        await client.close();
-        //console.log('MongoDB connection closed');
+    // Close the MongoDB connection
+    await client.close();
+    //console.log('MongoDB connection closed');
 
-    }
-    catch (error) {
-        console.error('Error Connecting to MongoDB', error);
-        errorLogger.log("error", `${userName} failed to update fms questionries due to ${error.message}`);
-        return res.status(500).send({ error: error.message, status: 500 });
-    }
+  }
+  catch (error) {
+    console.error('Error Connecting to MongoDB', error);
+    errorLogger.log("error", `${userName} failed to update fms questionries due to ${error.message}`);
+    return res.status(500).send({ error: error.message, status: 500 });
+  }
 })
 
 //CREATE FMS Steps
-initialiseFms.post('/createFmsSteps' , async (req, res) => {
-    console.log('inside /createFmsSteps')
-    console.log(req.body)
+initialiseFms.post('/createFmsSteps', async (req, res) => {
+  console.log('inside /createFmsSteps')
+  console.log(req.body)
 
-    // Initialize variables to hold user details
-    let userName = "";
-    let userID = "";
-    let companyUrl = "";
-    let userEmail = "";
+  let userDetails = await fetchUserDetails(req.headers.authorization);
+  let userName = userDetails.userName;
+  let userID = userDetails.userID;
+  let companyUrl = userDetails.companyUrl;
+  let userEmail = userDetails.userEmail;
 
-    console.log(req.headers.authorization)
-      const authHeader = req.headers.authorization;
-      if (!authHeader || !authHeader.startsWith("Bearer")) {
-        console.log("error: Authorization header missing or malformed");
-        errorLogger.log("error", `Token ${req.headers.authorization} is un-authorized as authorization header missing or malformed for api createFmsSteps`);
-        return res.status(401).json({ error: 'Unauthorized' });
-      }
-      const token = authHeader.split(" ")[1];
-      infoLogger.log("info", `token ${token} is verified successfuly for the api createFmsSteps`);
-      console.log('token fetched is ' , token)
+  try {
 
-    try {
-        // Fetch user details and company details based on the token
-        const response = await axios.post(process.env.MAIN_BE_URL, { token: token });
-        console.log('Fetched User Details and Company Details', response.data);
-        userName = response.data.emp_name;
-        userID = response.data.user_id;
-        companyUrl = response.data.verify_company_url;
-        userEmail = response.data.email_id;
-        infoLogger.log("info", `${JSON.stringify(response.data)} logged in autopilot fms`)
-        
-    } catch (error) {
-        console.error('Error posting data:', error);
-        errorLogger.log("error",`Failed to fetch user details due to ${error.message}`)
-        return res.status(500).send({ error: 'Error fetching user details', status: 500 });
-        
-    }
-
-    try {
-
-        // Connect to MongoDB and perform operations
-        const client = await MongoClient.connect(process.env.MONGO_DB_STRING);
-        console.log('Connected to database');
-        const db = client.db(companyUrl);
-        const collection = db.collection('fmsMaster');
-        infoLogger.log("info", `${userName} from company ${companyUrl}  hit the api createFmsSteps`)
-        //const filter = { fmsName : req.body.fmsName };
-        const filter = { fmsMasterId : req.body.fmsMasterId };
-    const update = { $set: { fmsSteps : req.body.fmsSteps  } };
+    // Connect to MongoDB and perform operations
+    const client = await MongoClient.connect(process.env.MONGO_DB_STRING);
+    console.log('Connected to database');
+    const db = client.db(companyUrl);
+    const collection = db.collection('fmsMaster');
+    infoLogger.log("info", `${userName} from company ${companyUrl}  hit the api createFmsSteps`)
+    //const filter = { fmsName : req.body.fmsName };
+    const filter = { fmsMasterId: req.body.fmsMasterId };
+    const update = { $set: { fmsSteps: req.body.fmsSteps } };
     const options = { upsert: true };
-    
+
     const result = await collection.updateOne(filter, update, options);
-    
+
     if (result.upsertedCount === 1) {
       console.log('Document inserted');
     } else if (result.modifiedCount === 1) {
@@ -422,8 +310,8 @@ initialiseFms.post('/createFmsSteps' , async (req, res) => {
     console.log(result)
     infoLogger.log("info", `${userName} creating ${JSON.stringify(update)} fms steps and successfully updated ${JSON.stringify(result)} fms steps`)
     res.json({
-        "message" : `${req.body.fmsName} FMS Steps is Successfully Added`,
-        "status" : 200
+      "message": `${req.body.fmsName} FMS Steps is Successfully Added`,
+      "status": 200
     })
 
 
@@ -442,68 +330,41 @@ initialiseFms.post('/createFmsSteps' , async (req, res) => {
     await client.close();
     console.log('MongoDB connection closed');
 
-    }
-    catch (error) {
-        console.error('Error Connecting to MongoDB', error);
-        errorLogger.log("error", `${userName} failed to create fms steps due to ${error.message}`);
-        return res.status(500).send({ error: error.message, status: 500 });
-    }
+  }
+  catch (error) {
+    console.error('Error Connecting to MongoDB', error);
+    errorLogger.log("error", `${userName} failed to create fms steps due to ${error.message}`);
+    return res.status(500).send({ error: error.message, status: 500 });
+  }
 
-    
+
 })
 
 
 //CREATE FMS Steps
-initialiseFms.post('/makeFmsLive' , async (req, res) => {
+initialiseFms.post('/makeFmsLive', async (req, res) => {
 
-    // Initialize variables to hold user details
-    let userName = "";
-    let userID = "";
-    let companyUrl = "";
-    let userEmail = "";
+  let userDetails = await fetchUserDetails(req.headers.authorization);
+  let userName = userDetails.userName;
+  let userID = userDetails.userID;
+  let companyUrl = userDetails.companyUrl;
+  let userEmail = userDetails.userEmail;
 
-    console.log(req.headers.authorization)
-      const authHeader = req.headers.authorization;
-      if (!authHeader || !authHeader.startsWith("Bearer")) {
-        errorLogger.log("error", `Token ${req.headers.authorization} is un-authorized as authorization header missing or malformed for api makeFmsLive`);
-        console.log("error: Authorization header missing or malformed");
-        return res.status(401).json({ error: 'Unauthorized' });
-      }
-      const token = authHeader.split(" ")[1];
-      infoLogger.log("info", `token ${token} is verified successfuly for the api makeFmsLive`);
-      console.log('token fetched is ' , token)
+  try {
 
-    try {
-        // Fetch user details and company details based on the token
-        const response = await axios.post(process.env.MAIN_BE_URL, { token: token });
-        console.log('Fetched User Details and Company Details', response.data);
-        userName = response.data.emp_name;
-        userID = response.data.user_id;
-        companyUrl = response.data.verify_company_url;
-        userEmail = response.data.email_id;  
-        infoLogger.log("info", `${JSON.stringify(response.data)} logged in autopilot fms`)
-    } catch (error) {
-        console.error('Error posting data:', error);
-        errorLogger.log("error",`Failed to fetch user details due to ${error.message}`)
-        return res.status(500).send({ error: 'Error fetching user details', status: 500 });
-       
-    }
-
-    try {
-
-        // Connect to MongoDB and perform operations
-        const client = await MongoClient.connect(process.env.MONGO_DB_STRING);
-        console.log('Connected to database');
-        const db = client.db(companyUrl);
-        const collection = db.collection('fmsMaster');
-        infoLogger.log("info", `${userName} from company ${companyUrl}  hit the api makeFmsLive`)
-        //const filter = { fmsName : req.body.fmsName };
-        const filter = { fmsMasterId : req.body.fmsMasterId };
-    const update = { $set: { fmsLive : req.body.fmsLive } };   //fmsLive means that fms is active
+    // Connect to MongoDB and perform operations
+    const client = await MongoClient.connect(process.env.MONGO_DB_STRING);
+    console.log('Connected to database');
+    const db = client.db(companyUrl);
+    const collection = db.collection('fmsMaster');
+    infoLogger.log("info", `${userName} from company ${companyUrl}  hit the api makeFmsLive`)
+    //const filter = { fmsName : req.body.fmsName };
+    const filter = { fmsMasterId: req.body.fmsMasterId };
+    const update = { $set: { fmsLive: req.body.fmsLive } };   //fmsLive means that fms is active
     const options = { upsert: true };
-    
+
     const result = await collection.updateOne(filter, update, options);
-    
+
     if (result.upsertedCount === 1) {
       console.log('Document inserted');
     } else if (result.modifiedCount === 1) {
@@ -515,22 +376,22 @@ initialiseFms.post('/makeFmsLive' , async (req, res) => {
     console.log(result)
     infoLogger.log("info", `FMS id:${req.body.fmsMasterId} is set to live by ${userName}`)
     res.json({
-        "message" : `${req.body.fmsName} FMS Steps is Successfully Added`,
-        "status" : 200
+      "message": `${req.body.fmsName} FMS Steps is Successfully Added`,
+      "status": 200
     })
 
     // Close the MongoDB connection
     await client.close();
     console.log('MongoDB connection closed');
 
-    }
-    catch (error) {
-        console.error('Error Connecting to MongoDB', error);
-        errorLogger.log("error", `${userName} failed to make fms live due to ${error.message}`);
-        return res.status(500).send({ error: error.message, status: 500 });
-    }
+  }
+  catch (error) {
+    console.error('Error Connecting to MongoDB', error);
+    errorLogger.log("error", `${userName} failed to make fms live due to ${error.message}`);
+    return res.status(500).send({ error: error.message, status: 500 });
+  }
 
-    
+
 })
 
 

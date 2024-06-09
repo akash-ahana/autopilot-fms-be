@@ -103,7 +103,7 @@ initialiseFms.post('/fmsStep1', async (req, res) => {
 
         console.log("token",token);
         ////Fetch process details
-        const processDetailsResponse = await axios.post(process.env.MAIN_BE_PROCESS_URL, {
+        const processDetailsResponse = await instance.post(process.env.MAIN_BE_PROCESS_URL, {
           p_id: req.body.fmsProcess,
           verify_company_url: companyUrl
       });

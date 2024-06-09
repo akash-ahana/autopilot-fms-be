@@ -28,13 +28,31 @@ initialiseFms.post('/fmsStep1', async (req, res) => {
 
     try {
         // Fetch user details and company details based on the token
-        const response = await axios.post(process.env.MAIN_BE_URL, { token: token });
+        const instance = axios.create({
+          httpsAgent: new (require('https').Agent)({
+            rejectUnauthorized: false
+          })
+        });
+
+        const response = await instance.post(process.env.MAIN_BE_URL, { token: token })
+        .then(response => {
+          console.log(response.data);
+          console.log('Fetched User Details and Company Details', response.data);
+        userName = response.data.emp_name;
+        userID = response.data.user_id;
+        companyUrl = response.data.verify_company_url;
+        userEmail = response.data.email_id;
+        })
+        .catch(error => {
+          console.error('Error:', error);
+        });
+        //const response = await axios.post(process.env.MAIN_BE_URL, { token: token });
         console.log('Fetched User Details and Company Details', response.data);
         userName = response.data.emp_name;
         userID = response.data.user_id;
         companyUrl = response.data.verify_company_url;
         userEmail = response.data.email_id;
-        infoLogger.log("info", `${JSON.stringify(response.data)} logged in autopilot fms`)
+        //infoLogger.log("info", `${JSON.stringify(response.data)} logged in autopilot fms`)
     } catch (error) {
         console.error('Error posting data:', error);
         errorLogger.log("error",`Failed to fetch user details due to ${error.message}`)

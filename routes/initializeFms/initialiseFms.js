@@ -35,30 +35,36 @@ initialiseFms.post('/fmsStep1', async (req, res) => {
         });
 
         const response = await instance.post(process.env.MAIN_BE_URL, { token: token })
-        //.then(response => {
-          //console.log(response.data);
-         // console.log('Fetched User Details and Company Details', response.data);
-        //userName = response.data.emp_name;
-        //userID = response.data.user_id;
-        //companyUrl = response.data.verify_company_url;
-        //userEmail = response.data.email_id;
-        //})
-        //.catch(error => {
-        //  console.error('Error:', error);
-        //});
-        //const response = await axios.post(process.env.MAIN_BE_URL, { token: token });
-        console.log('Fetched User Details and Company Details outside catch block', response.data);
+        .then(response => {
+          console.log(response.data);
+         console.log('Fetched User Details and Company Details', response.data);
         userName = response.data.emp_name;
         userID = response.data.user_id;
         companyUrl = response.data.verify_company_url;
         userEmail = response.data.email_id;
+        })
+        .catch(error => {
+         console.error('Error:', error);
+        });
+       // const response = await axios.post(process.env.MAIN_BE_URL, { token: token });
+       // console.log('Fetched User Details and Company Details outside catch block', response.data);
+       // userName = response.data.emp_name;
+       // userID = response.data.user_id;
+      //  companyUrl = response.data.verify_company_url;
+      //  userEmail = response.data.email_id;
         //infoLogger.log("info", `${JSON.stringify(response.data)} logged in autopilot fms`)
     } catch (error) {
         console.error('Error posting data:', error);
         errorLogger.log("error",`Failed to fetch user details due to ${error.message}`)
          return res.status(500).send({ error: 'Error fetching user details', status: 500 });
-       
     }
+
+    console.log("userName" , userName)
+    console.log("userID" , userID)
+    console.log("companyUrl" , companyUrl)
+    console.log("userEmail" , userEmail)
+
+
 
     try {
         // Connect to MongoDB and perform operations

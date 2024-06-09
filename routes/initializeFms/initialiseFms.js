@@ -316,16 +316,21 @@ initialiseFms.post('/createFmsSteps', async (req, res) => {
 
 
 
+     // //-------------------------Triggr Whatsapp Messages---------------------------------------//
+    // console.log('trigger Whatsapp messages')
+    // console.log(fmsSteps)
+    // // const lastFmsStep = fmsSteps[fmsSteps.length - 1];
     // try {
-    //     const sendWhatsapp = await axios.post(process.env.MAIN_BE_WHATSAPP_URL, {
-    //     verify_company_url: companyUrl,
-    //     fmsSteps: req.body.fmsSteps
-    //     });
+    //   const instance = axios.create({ httpsAgent: new (require('https').Agent)({ rejectUnauthorized: false }) });
+    //const sendWhatsapp = await instance.post(process.env.MAIN_BE_PROCESS_URL, {
+   //     verify_company_url: companyUrl,
+   //     fmsSteps: lastFmsStep,
+    //    whatsappData: whatsappData // Include whatsappData if needed
+    //});
     //     console.log('WhatsApp message sent', sendWhatsapp.data);
     // } catch (whatsappError) {
     //     console.error('Error sending WhatsApp message:', whatsappError);
     // }
-
     // Close the MongoDB connection
     await client.close();
     console.log('MongoDB connection closed');

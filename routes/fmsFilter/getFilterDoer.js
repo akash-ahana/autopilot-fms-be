@@ -56,9 +56,13 @@ getfilterDoer.get('/getfilterDoer', async (req, res) => {
         console.log("Received week_no:", week_no);
 
         // Fetch company starting day of the week
-        const companyStartingDayWeekResponse = await axios.post(process.env.MAIN_BE_STARTDAY_WEEK_URL, {
-          verify_company_url: companyUrl
+        const instance = axios.create({ httpsAgent: new (require('https').Agent)({ rejectUnauthorized: false }) });
+        const companyStartingDayWeekResponse = await instance.post(process.env.MAIN_BE_STARTDAY_WEEK_URL_PERFORMANCE, {
+            verify_company_url: companyUrl
         });
+        // const companyStartingDayWeekResponse = await axios.post(process.env.MAIN_BE_STARTDAY_WEEK_URL, {
+        //   verify_company_url: companyUrl
+        // });
 
         const responseResults = companyStartingDayWeekResponse.data.result;
         console.log("Company Starting Day Week Response Results:", responseResults);

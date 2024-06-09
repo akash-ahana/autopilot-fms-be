@@ -26,9 +26,14 @@ fmsdataanalytics.post("/fmsdataanalytics", async (req, res) => {
         const taskDocuments = await collection.find(query).toArray();
         console.log("Task documents", taskDocuments);
 
-        const companyStartingDayWeekResponse = await axios.post(process.env.MAIN_BE_STARTDAY_WEEK_URL_PERFORMANCE, {
+        ///
+        const instance = axios.create({ httpsAgent: new (require('https').Agent)({ rejectUnauthorized: false }) });
+        const companyStartingDayWeekResponse = await instance.post(process.env.MAIN_BE_STARTDAY_WEEK_URL_PERFORMANCE, {
             verify_company_url: companyUrl
         });
+        // const companyStartingDayWeekResponse = await axios.post(process.env.MAIN_BE_STARTDAY_WEEK_URL_PERFORMANCE, {
+        //     verify_company_url: companyUrl
+        // });
 
         const responseResults = companyStartingDayWeekResponse.data.result;
         //   console.log(responseResults);

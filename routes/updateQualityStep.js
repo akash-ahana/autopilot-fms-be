@@ -148,7 +148,9 @@ updateQualitySteps.post('/updateQualitySteps' , async (req, res) => {
                 plannedCompletionTimeIST = plannedCompletionTime;
             } else {
                 try {
-                    const response = await axios.post(process.env.MAIN_BE_WORKING_SHIFT_URL, { verify_company_url: companyUrl });
+                    const instance = axios.create({ httpsAgent: new (require('https').Agent)({ rejectUnauthorized: false }) });
+                    const response = await instance.post(process.env.MAIN_BE_WORKING_SHIFT_URL, { verify_company_url: companyUrl });
+                    //const response = await axios.post(process.env.MAIN_BE_WORKING_SHIFT_URL, { verify_company_url: companyUrl });
                     let shiftStartTimeStr = response.data.result[0].shiftStartTime;
                     let shiftEndTimeStr = response.data.result[0].shiftEndTime;
 
@@ -279,7 +281,9 @@ updateQualitySteps.post('/updateQualitySteps' , async (req, res) => {
 
 
                 // Fetching non-working days from the backend
-                const responseHoliday = await axios.post(process.env.MAIN_BE_HOLIDAY_NONWORKINGDAY_URL, { verify_company_url: companyUrl });//output like this  -> responseHoliday = ['2024-01-07', '2024-01-14']
+                const instance = axios.create({ httpsAgent: new (require('https').Agent)({ rejectUnauthorized: false }) });
+                const responseHoliday = await instance.post(process.env.MAIN_BE_HOLIDAY_NONWORKINGDAY_URL, { verify_company_url: companyUrl });//output like this  -> responseHoliday = ['2024-01-07', '2024-01-14']
+                //const responseHoliday = await axios.post(process.env.MAIN_BE_HOLIDAY_NONWORKINGDAY_URL, { verify_company_url: companyUrl });//output like this  -> responseHoliday = ['2024-01-07', '2024-01-14']
 
 
                 // const datesArrayAsObjects1 = responseHoliday.data.map(dateString => new Date(dateString));
@@ -411,7 +415,9 @@ updateQualitySteps.post('/updateQualitySteps' , async (req, res) => {
                 console.log("inputTimeString", inputTimeString);
 
                 // Fetching non-working days from the backend
-                const responseHoliday = await axios.post(process.env.MAIN_BE_HOLIDAY_NONWORKINGDAY_URL, { verify_company_url: companyUrl });
+                const instance1 = axios.create({ httpsAgent: new (require('https').Agent)({ rejectUnauthorized: false }) });
+                const responseHoliday = await instance1.post(process.env.MAIN_BE_HOLIDAY_NONWORKINGDAY_URL, { verify_company_url: companyUrl });//output like this  -> responseHoliday = ['2024-01-07', '2024-01-14']
+                //const responseHoliday = await axios.post(process.env.MAIN_BE_HOLIDAY_NONWORKINGDAY_URL, { verify_company_url: companyUrl });
                 // Convert holiday dates to IST
                 const holidays = responseHoliday.data.map(dateString => {
                     let utcDate = new Date(dateString);

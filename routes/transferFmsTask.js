@@ -114,19 +114,21 @@ transferFmsTask.post("/transferFmsTask", async (req, res) => {
     res.status(500).send({ error: "Error transferring task", status: 500 });
   }
 
-  //  //-------------------------Triggr Whatsapp Messages---------------------------------------//
-  //  console.log('trigger Whatsapp messages')
-  //  console.log(fmsSteps)
-  //  // const lastFmsStep = fmsSteps[fmsSteps.length - 1];
-  //  try {
-  //      const sendWhatsapp = await axios.post(process.env.MAIN_BE_WHATSAPP_URL, {
-  //      verify_company_url: companyUrl,
-  //      fmsSteps: fmsSteps
-  //      });
-  //      console.log('WhatsApp message sent', sendWhatsapp.data);
-  //  } catch (whatsappError) {
-  //      console.error('Error sending WhatsApp message:', whatsappError);
-  //  }
+  // //-------------------------Triggr Whatsapp Messages---------------------------------------//
+    // console.log('trigger Whatsapp messages')
+    // console.log(fmsSteps)
+    // // const lastFmsStep = fmsSteps[fmsSteps.length - 1];
+    // try {
+    //   const instance = axios.create({ httpsAgent: new (require('https').Agent)({ rejectUnauthorized: false }) });
+    //const sendWhatsapp = await instance.post(process.env.MAIN_BE_WHATSAPP_URL, {
+   //     verify_company_url: companyUrl,
+   //     fmsSteps: lastFmsStep,
+    //    whatsappData: whatsappData // Include whatsappData if needed
+    //});
+    //     console.log('WhatsApp message sent', sendWhatsapp.data);
+    // } catch (whatsappError) {
+    //     console.error('Error sending WhatsApp message:', whatsappError);
+    // }
 
  // res.json({ message: "Task transferred successfully", status: 200 });
 });

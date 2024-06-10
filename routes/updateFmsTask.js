@@ -54,8 +54,8 @@ updateFmsTask.post('/updateFmsTask' , async (req, res) => {
     //fetch if the task is already created based on fmsQAId and stepId if not create a new task , else update the task status  -- this is done for quality Step
     console.log('fmsQAId' , '---------' , req.body.fmsQAId , '----------' , 'updated stepId' , req.body.stepId , '----------' , 'to create stepId' , '----' , req.body.stepId + 1   )
     //try catch block to check if the task is already created
-    let isTaskAlreadyCreated
-    let alreadyCreatedTask
+    let isTaskAlreadyCreated //true or false
+    let alreadyCreatedTask   //full task info if the task is already created
     try {
         // Connect to MongoDB and perform operations
         const client = await MongoClient.connect(process.env.MONGO_DB_STRING, {
@@ -722,6 +722,8 @@ async function updateTaskStatus(companyUrl ,fmsTaskId, formStepsAnswers,fmsTaskQ
     }
 }
 
+
+//This Function will get Executed only if the last task in the FMS - it makes the fmsQAId document false , and fmsMasterId-1
 async function updateAndCountDocuments(companyUrl , fmsQAId , fmsMasterId) {
 
     //update the fms to false

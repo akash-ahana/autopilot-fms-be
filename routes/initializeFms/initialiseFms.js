@@ -485,8 +485,93 @@ initialiseFms.post('/createFmsSteps' , async (req, res) => {
     
 })
 
+//API Edit and Store Decision Details
+initialiseFms.post('/editStoreDecisionDetails' , async (req, res) => {
 
-//CREATE FMS Steps
+  // Initialize variables to hold user details
+  let userName = "";
+  let userID = "";
+  let companyUrl = "";
+  let userEmail = "";
+
+  console.log(req.headers.authorization)
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith("Bearer")) {
+      errorLogger.log("error", `Token ${req.headers.authorization} is un-authorized as authorization header missing or malformed for api makeFmsLive`);
+      console.log("error: Authorization header missing or malformed");
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+    const token = authHeader.split(" ")[1];
+    infoLogger.log("info", `token ${token} is verified successfuly for the api makeFmsLive`);
+    console.log('token fetched is ' , token)
+
+  // try {
+  //     // Fetch user details and company details based on the token
+  //     const response = await axios.post(process.env.MAIN_BE_URL, { token: token });
+  //     console.log('Fetched User Details and Company Details', response.data);
+  //     userName = response.data.emp_name;
+  //     userID = response.data.user_id;
+  //     companyUrl = response.data.verify_company_url;
+  //     userEmail = response.data.email_id;  
+  //     infoLogger.log("info", `${JSON.stringify(response.data)} logged in autopilot fms`)
+  // } catch (error) {
+  //     console.error('Error posting data:', error);
+  //     errorLogger.log("error",`Failed to fetch user details due to ${error.message}`)
+  //     return res.status(500).send({ error: 'Error fetching user details', status: 500 });
+     
+  // }
+
+  // try {
+
+  //     // Connect to MongoDB and perform operations
+  //     const client = await MongoClient.connect(process.env.MONGO_DB_STRING);
+  //     console.log('Connected to database');
+  //     const db = client.db(companyUrl);
+  //     const collection = db.collection('fmsMaster');
+  //     infoLogger.log("info", `${userName} from company ${companyUrl}  hit the api makeFmsLive`)
+  //     //const filter = { fmsName : req.body.fmsName };
+  //     const filter = { fmsMasterId : req.body.fmsMasterId };
+  // const update = { $set: { fmsLive : req.body.fmsLive } };   //fmsLive means that fms is active
+  // const options = { upsert: true };
+  
+  // const result = await collection.updateOne(filter, update, options);
+  
+  // if (result.upsertedCount === 1) {
+  //   console.log('Document inserted');
+  // } else if (result.modifiedCount === 1) {
+  //   console.log('Document updated');
+  // } else {
+  //   console.log('No changes made to the document');
+  // }
+
+  // console.log(result)
+  // infoLogger.log("info", `FMS id:${req.body.fmsMasterId} is set to live by ${userName}`)
+  // res.json({
+  //     "message" : `${req.body.fmsName} FMS Steps is Successfully Added`,
+  //     "status" : 200
+  // })
+
+  // // Close the MongoDB connection
+  // await client.close();
+  // console.log('MongoDB connection closed');
+
+  // }
+  // catch (error) {
+  //     console.error('Error Connecting to MongoDB', error);
+  //     errorLogger.log("error", `${userName} failed to make fms live due to ${error.message}`);
+  //     return res.status(500).send({ error: error.message, status: 500 });
+  // }
+
+  res.json({
+    "message" : `${req.body.fmsName}  - Decision Details Successfully Added`,
+    "status" : 200
+})
+
+  
+})
+
+
+//API to make FMS Live 
 initialiseFms.post('/makeFmsLive' , async (req, res) => {
 
     // Initialize variables to hold user details

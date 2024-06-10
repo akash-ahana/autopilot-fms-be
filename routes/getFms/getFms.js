@@ -280,7 +280,7 @@ getFms.post('/findPreviousStepsDetails' , async (req, res) => {
 
 //make an api where if I pass you fmsmasterid & stepid, can you give me list of NEXT stepids and what has to be done in an array
 getFms.post('/findNextStepsDetails' , async (req, res) => {
-  console.log(' inside /findPreviousStepsDetails')
+  console.log(' inside /findNextStepsDetails')
   console.log(req.body)
    // Initialize variables to hold user details
    let userName = "";

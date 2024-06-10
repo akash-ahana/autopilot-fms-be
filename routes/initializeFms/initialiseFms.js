@@ -487,6 +487,10 @@ initialiseFms.post('/createFmsSteps' , async (req, res) => {
 
 //API Edit and Store Decision Details
 initialiseFms.post('/editStoreDecisionDetails' , async (req, res) => {
+  console.log('------------INSIDE EDIT DECISION DETAILS -------------------')
+  console.log('------------INSIDE EDIT DECISION DETAILS -------------------')
+  console.log('------------INSIDE EDIT DECISION DETAILS -------------------')
+  console.log(req.body)
 
   // Initialize variables to hold user details
   let userName = "";

@@ -102,8 +102,8 @@ console.error('Error Connecting to MongoDB' , error)
 
 
 //--GET FMS------------------------------------------------------------//
-// const getFms = require("./routes/getFms/getFms");
-// app.use("/getFms", getFms);
+const getFms = require("./routes/getFms/getFms");
+app.use("/getFms", getFms);
 
 
 //--FMS INITIALISATION--------------------------------------------------//

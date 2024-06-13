@@ -7,16 +7,30 @@ const moment = require('moment');
 
 
 
-const calculateFmsPlannedComplitionTime = async (companyUrl, duration, durationType, working, plannedCompletionTime, plannedCompletionTimeIST) => {    
+const calculateFmsPlannedComplitionTime = async (companyUrl, duration, durationType, working, plannedCompletionTime, plannedCompletionTimeIST, decisionforPlannedComplitionTime) => {
     try {
-        
+        console.log("inside calculate planned complitiaon time", decisionforPlannedComplitionTime);
         // Calculate Fms Planned Completion Time
         if (durationType === "hrs") {
             if (working === "OUTSIDE") {
-                plannedCompletionTime = addHrs(CurrentIST(), duration);
-                plannedCompletionTimeIST = plannedCompletionTime;
+                const fetchDate = decisionforPlannedComplitionTime.answer;
+
+
+                if (decisionforPlannedComplitionTime.answerType === 'DATE' && decisionforPlannedComplitionTime.isStartDate === true) {
+                    console.log("inside DATE function");
+                    const currentDateISTAnswer = moment(fetchDate).tz('Asia/Kolkata');
+                    console.log("currentDate:", currentDateISTAnswer.format());
+                    plannedCompletionTime = currentDateISTAnswer.add(duration, 'hours').format();
+                    plannedCompletionTime = await validateHolidayforHRS(plannedCompletionTime, companyUrl);
+                    plannedCompletionTimeIST = plannedCompletionTime;
+                } else {
+                    console.log("inside other than all the fucntions");
+                    plannedCompletionTime = addHrs(CurrentIST(), duration);
+                    plannedCompletionTimeIST = plannedCompletionTime;
+                }
             } else {
                 try {
+                    const fetchDate = decisionforPlannedComplitionTime.answer;
                     const response = await axios.post(process.env.MAIN_BE_WORKING_SHIFT_URL, { verify_company_url: companyUrl });
                     let shiftStartTimeStr = response.data.result[0].shiftStartTime;
                     let shiftEndTimeStr = response.data.result[0].shiftEndTime;
@@ -24,30 +38,69 @@ const calculateFmsPlannedComplitionTime = async (companyUrl, duration, durationT
                     let shiftStartTime = moment.tz(shiftStartTimeStr, 'Asia/Kolkata').add(5, 'hours').add(30, 'minutes').toDate();
                     let shiftEndTime = moment.tz(shiftEndTimeStr, 'Asia/Kolkata').add(5, 'hours').add(30, 'minutes').toDate();
 
-                    const currentDateTimeFinal = moment().tz('Asia/Kolkata').add(duration, 'hours').toDate();
-                    currentDateTimeFinal.setHours(currentDateTimeFinal.getHours() + 5);
-                    currentDateTimeFinal.setMinutes(currentDateTimeFinal.getMinutes() + 30);
+                    console.log("shitStartTime", shiftStartTime);
+                    console.log("shiftEndTime", shiftEndTime);
+
+                    let currentDateTimeFinal;
+                    if (decisionforPlannedComplitionTime.answerType === 'DATE' && decisionforPlannedComplitionTime.isStartDate === true ) {
+                        console.log("fetchDate", fetchDate);
+                        const currentDateISTAnswer = moment(fetchDate).tz('Asia/Kolkata');
+                        console.log("currentDate:", currentDateISTAnswer.format());
+                        currentDateTimeFinal = currentDateISTAnswer.add(duration, 'hours').format();
+
+                    } else {
+                        currentDateTimeFinal = moment().tz('Asia/Kolkata').add(duration, 'hours').toDate();
+                        currentDateTimeFinal.setHours(currentDateTimeFinal.getHours() + 5);
+                        currentDateTimeFinal.setMinutes(currentDateTimeFinal.getMinutes() + 30);
+                    }
 
                     console.log('Initial plannedCompletionTime:', currentDateTimeFinal);
 
-                    const plannedTimeDate = currentDateTimeFinal;
+                    let plannedTimeDate;
+                    if (decisionforPlannedComplitionTime.answerType === 'DATE' && decisionforPlannedComplitionTime.isStartDate === true) {
+                        plannedTimeDate = moment.tz(currentDateTimeFinal, 'Asia/Kolkata').add(5, 'hours').add(30, 'minutes').toDate();
+                    } else {
+                        plannedTimeDate = currentDateTimeFinal;
+                        console.log("plannedTimeDate after additoon", plannedTimeDate);
+                    }
+
+
                     const shiftEndTimeDate = new Date(shiftEndTime);
 
                     function calculateBalanceHours(plannedCompletionTime, shiftEndTime) {
                         if (plannedCompletionTime > shiftEndTime) {
+
+                            console.log("plannedCompletionTime inside the funtion", plannedCompletionTime);
                             let diffMillis = plannedCompletionTime.getTime() - shiftEndTime.getTime();
+                            console.log("diff", diffMillis);
                             let hours = Math.floor(diffMillis / (1000 * 60 * 60));
+                            console.log("hours", hours);
                             let minutes = Math.floor((diffMillis % (1000 * 60 * 60)) / (1000 * 60));
+                            console.log("minutes", minutes);
                             let seconds = Math.floor(((diffMillis % (1000 * 60 * 60)) % (1000 * 60)) / 1000);
+                            console.log("seconfs",seconds );
 
                             let overflowforThatDayIs = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
 
                             let nextDayCompletionTime = new Date(shiftStartTime);
-                            nextDayCompletionTime.setDate(plannedCompletionTime.getDate() + 1); // Move to next day
+
+                            console.log("step0" , nextDayCompletionTime);
+                            // Check if the planned completion time exceeds the shift end time
+                            if (plannedCompletionTime.getDate() !== shiftEndTime.getDate() || plannedCompletionTime > shiftEndTime) {
+                                // Add only if the planned completion time exceeds the shift end time
+                                console.log("entering into loop");
+                                nextDayCompletionTime.setDate(nextDayCompletionTime.getDate() + 1);
+                            }
+
+                            console.log("nextDayCompletionTime after checking date:", nextDayCompletionTime);
 
                             nextDayCompletionTime.setHours(nextDayCompletionTime.getHours() + hours);
+                            console.log("ste1", nextDayCompletionTime);
                             nextDayCompletionTime.setMinutes(nextDayCompletionTime.getMinutes() + minutes);
+                            console.log("ste2", nextDayCompletionTime);
                             nextDayCompletionTime.setSeconds(nextDayCompletionTime.getSeconds() + seconds);
+                            console.log("ste3", nextDayCompletionTime);
+
 
                             console.log('Final planned completion time (before adding offset):', nextDayCompletionTime);
 
@@ -58,7 +111,12 @@ const calculateFmsPlannedComplitionTime = async (companyUrl, duration, durationT
                             return plannedCompletionTimeIST;
                         } else {
                             console.log("plannedTimeDate check here", plannedCompletionTime);
-                            let plannedCompletionTimeIST = moment(plannedCompletionTime).tz('Asia/Kolkata').subtract(5, 'hours').subtract(30, 'minutes').format();
+                            let plannedCompletionTimeIST
+                            if (decisionforPlannedComplitionTime.answerType === 'DATE' && decisionforPlannedComplitionTime.isStartDate === true) {
+                                plannedCompletionTimeIST = moment(plannedCompletionTime).tz('Asia/Kolkata').format();
+                            } else {
+                                plannedCompletionTimeIST = moment(plannedCompletionTime).tz('Asia/Kolkata').subtract(5, 'hours').subtract(30, 'minutes').format();
+                            }
                             console.log("plannedCompletionTimeIST check here", plannedCompletionTimeIST);
                             return plannedCompletionTimeIST;
                         }
@@ -67,11 +125,12 @@ const calculateFmsPlannedComplitionTime = async (companyUrl, duration, durationT
                     let balanceTime = calculateBalanceHours(plannedTimeDate, shiftEndTimeDate);
                     console.log('Balance time:', balanceTime);
 
-                    if (plannedTimeDate > shiftEndTime) {
+                    if (plannedTimeDate > shiftEndTime && plannedTimeDate.getDate() !== shiftEndTimeDate.getDate() || plannedTimeDate.getTime() > shiftEndTimeDate.getTime() ) {
                         // Perform holiday validation only if planned completion time exceeds shift end time
-                        plannedCompletionTimeIST = await validateHolidayforHRS(balanceTime , companyUrl);
+                        plannedCompletionTimeIST = await validateHolidayforHRS(balanceTime, companyUrl);
                         console.log('Planned completion time after holiday validation:', plannedCompletionTimeIST);
                     } else {
+                        console.log("unless the date is more it was not verifying the date", balanceTime);
                         plannedCompletionTimeIST = balanceTime;
                     }
 
@@ -83,15 +142,27 @@ const calculateFmsPlannedComplitionTime = async (companyUrl, duration, durationT
                 }
             }
         } else {
-            const currentDateTimeFinal = moment().tz('Asia/Kolkata').toDate();
-            currentDateTimeFinal.setHours(currentDateTimeFinal.getHours() + 5);
-            currentDateTimeFinal.setMinutes(currentDateTimeFinal.getMinutes() + 30);
+            const fetchDate = decisionforPlannedComplitionTime.answer;
+            if (decisionforPlannedComplitionTime.answerType === 'DATE' && decisionforPlannedComplitionTime.isStartDate === true) {
+                console.log("inside DATE function");
 
-            console.log("date check", currentDateTimeFinal);
-            plannedCompletionTime = currentDateTimeFinal;
-            console.log("plannedCompletionTime for days", plannedCompletionTime);
-            plannedCompletionTime = await validateHoliday(plannedCompletionTime, duration, companyUrl);
-            plannedCompletionTimeIST = plannedCompletionTime;
+                console.log("fetchDate", fetchDate);
+                const currentDateISTAnswer = moment(fetchDate).tz('Asia/Kolkata');
+                // console.log("currentDate:", currentDateISTAnswer.format());
+                plannedCompletionTime = currentDateISTAnswer.format();
+                console.log("planned time for datwe", plannedCompletionTime);
+                plannedCompletionTime = await validateHoliday(plannedCompletionTime, duration, companyUrl, decisionforPlannedComplitionTime);
+                plannedCompletionTimeIST = plannedCompletionTime;
+            } else {
+                const currentDateTimeFinal = moment().tz('Asia/Kolkata').toDate();
+                currentDateTimeFinal.setHours(currentDateTimeFinal.getHours() + 5);
+                currentDateTimeFinal.setMinutes(currentDateTimeFinal.getMinutes() + 30);
+                console.log("date check", currentDateTimeFinal);
+                plannedCompletionTime = currentDateTimeFinal;
+                console.log("plannedCompletionTime for days", plannedCompletionTime);
+                plannedCompletionTime = await validateHoliday(plannedCompletionTime, duration, companyUrl, decisionforPlannedComplitionTime);
+                plannedCompletionTimeIST = plannedCompletionTime;
+            }
         }
 
         console.log("Final Planned Completion Time:", plannedCompletionTimeIST);
@@ -206,7 +277,7 @@ async function validateHolidayforHRS(plannedCompletionTimeIST, companyUrl) {
     }
 }
 
-async function validateHoliday(plannedCompletionTime, duration, companyUrl) {
+async function validateHoliday(plannedCompletionTime, duration, companyUrl, decisionforPlannedComplitionTime) {
     try {
         console.log("inside get next working day, holiday validation input is ", plannedCompletionTime);
         console.log("company url", companyUrl);
@@ -228,6 +299,7 @@ async function validateHoliday(plannedCompletionTime, duration, companyUrl) {
         console.log("inputTimeString", inputTimeString);
 
         const responseHoliday = await axios.post(process.env.MAIN_BE_HOLIDAY_NONWORKINGDAY_URL, { verify_company_url: companyUrl });
+
         const holidays = responseHoliday.data.map(dateString => {
             let utcDate = new Date(dateString);
             utcDate.setDate(utcDate.getDate() + 1); // Add one day
@@ -239,28 +311,42 @@ async function validateHoliday(plannedCompletionTime, duration, companyUrl) {
 
         function isHoliday(date) {
             let dateString = date.toISOString().split('T')[0];
+            console.log("dateString", dateString);
             return holidays.includes(dateString);
         }
 
         let currentDate = new Date(inputDateString);
 
+        // Adjust current date if it is a holiday
         while (isHoliday(currentDate)) {
+            console.log(`Current date ${currentDate.toISOString().split('T')[0]} is a holiday, moving to next day.`);
             currentDate.setDate(currentDate.getDate() + 1);
         }
 
         let totalDaysAdded = 0;
 
+        // Add the duration in days, skipping holidays
         while (totalDaysAdded < duration) {
             currentDate.setDate(currentDate.getDate() + 1);
+            console.log(`Checking date: ${currentDate.toISOString().split('T')[0]}`);
             if (!isHoliday(currentDate)) {
                 totalDaysAdded++;
+                console.log(`Adding day: ${currentDate.toISOString().split('T')[0]}. Total days added: ${totalDaysAdded}`);
+            } else {
+                console.log(`Date ${currentDate.toISOString().split('T')[0]} is a holiday, not adding.`);
             }
         }
 
-        let finalDate = new Date(currentDate.toISOString().split('T')[0] + "T" + inputTimeString);
-        let finalMoment = moment.tz(finalDate, 'Asia/Kolkata').subtract(5, 'hours').subtract(30, 'minutes');
+        // Combine the final working date with the input time
+        let finalDate = new Date(`${currentDate.toISOString().split('T')[0]}T${inputTimeString}`);
+        let finalMoment = moment.tz(finalDate, 'Asia/Kolkata');
 
-        let formattedFinalDate = finalMoment.format();
+        let formattedFinalDate;
+        if (decisionforPlannedComplitionTime.answerType === 'DATE' && decisionforPlannedComplitionTime.isStartDate === true) {
+            formattedFinalDate = moment(finalMoment).tz('Asia/Kolkata').format();
+        } else {
+            formattedFinalDate = moment(finalMoment).tz('Asia/Kolkata').subtract(5, 'hours').subtract(30, 'minutes').format();
+        }
 
         console.log("final planned completion date after holiday adjustment", formattedFinalDate);
 
@@ -273,4 +359,4 @@ async function validateHoliday(plannedCompletionTime, duration, companyUrl) {
 }
 
 
-module.exports =  {calculateFmsPlannedComplitionTime};
+module.exports = { calculateFmsPlannedComplitionTime };

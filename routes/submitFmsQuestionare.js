@@ -41,7 +41,6 @@ submitFmsQuestionare.post('/submitFmsUserQAcreateTaskStep1', async (req, res) =>
 
     }
 
-
     ///////////////////////////////////////////try catch block to submit QA
     let fmsQAId;
     try {
@@ -68,7 +67,6 @@ submitFmsQuestionare.post('/submitFmsUserQAcreateTaskStep1', async (req, res) =>
             fmsName: req.body.fmsName,
             fmsQA: req.body.fmsQA,
             fmsQAisLive: true
-
         });
         console.log('Submitted the QA');
         // Close the MongoDB connection
@@ -129,7 +127,7 @@ submitFmsQuestionare.post('/submitFmsUserQAcreateTaskStep1', async (req, res) =>
     let isWhatsAppEnabled;
     let whatsappData;
     let fmsSteps;
-
+ 
     try {
         console.log('inside try block for fetching doer for step 1 from fmsMaster')
         // Connect to MongoDB and perform operations
@@ -137,12 +135,16 @@ submitFmsQuestionare.post('/submitFmsUserQAcreateTaskStep1', async (req, res) =>
         console.log('Connected to database');
         const db = client.db(companyUrl);
         const collection = db.collection('fmsMaster');
+     
 
         // Find documents where fmsMasterId matches the given ID
         //const documents = await collection.find({ fmsMasterId }).toArray();
 
         const cursor = collection.find({ fmsMasterId: req.body.fmsMasterID });
-        const documents = await cursor.toArray();
+     
+
+        const documents = await cursor.toArray();      
+      
 
 
         // Check if documents were found
@@ -153,6 +155,8 @@ submitFmsQuestionare.post('/submitFmsUserQAcreateTaskStep1', async (req, res) =>
 
         // Extract the first document
         const document = documents[0];
+      
+        // console.log("document for fms" , document);
 
         // Find the first object in the "who" array where "typeOfShift" is "All"
         const whoObject = document.fmsSteps.find(step => step.who.typeOfShift === 'All');
@@ -169,7 +173,7 @@ submitFmsQuestionare.post('/submitFmsUserQAcreateTaskStep1', async (req, res) =>
             // WE SHOULD CREATE THE NEXT TASK AS THIS IS NOT THE LAST STEP IN THE FMS
             console.log('THERE ARE OTHER STEPS')
             shouldcreateNextTask = true
-
+        
             // Extract the first employee's information from the "employees" array
             employee = whoObject.who.employees[0];
             processId = document.fmsProcess
@@ -205,8 +209,6 @@ submitFmsQuestionare.post('/submitFmsUserQAcreateTaskStep1', async (req, res) =>
         // return;
     }
 
-
-
     //try catch block to create next Task
     // create nex ttask only if it is not the last step in the FMS
     console.log('Creating the next task if ', shouldcreateNextTask)
@@ -217,11 +219,22 @@ submitFmsQuestionare.post('/submitFmsUserQAcreateTaskStep1', async (req, res) =>
         try {
             //calculation of fmsTaskPlannedCompletionTime (start time - form submitted time, and tat in hrs or days)
             // Connect to MongoDB and perform operations
-            const client = await MongoClient.connect(process.env.MONGO_DB_STRING);
+        const client = await MongoClient.connect(process.env.MONGO_DB_STRING);
         console.log('Connected to database');
         const db = client.db(companyUrl);
         const collection = db.collection('fmsTasks');
 
+        const fmsCollection = db.collection('fms');
+        const cursorFms = fmsCollection.find({ fmsMasterId: req.body.fmsMasterID });
+
+        const fmsdocuments = await cursorFms.toArray(); 
+        const fmsdocument = fmsdocuments[0];
+
+        // console.log("fmsdocument" , fmsdocument);
+
+        const decisionforPlannedComplitionTime = fmsdocument.fmsQA[0];
+        console.log("decisionforPlannedComplitionTime" , decisionforPlannedComplitionTime);
+       
         // Find the last inserted document and get its incremental value
         const lastDocument = await collection.find().sort({ _id: -1 }).limit(1).toArray();
         let fmsTaskId = 1;
@@ -230,7 +243,7 @@ submitFmsQuestionare.post('/submitFmsUserQAcreateTaskStep1', async (req, res) =>
             fmsTaskId = lastDocument[0].fmsTaskId + 1;
         }
 
-            plannedCompletionTimeIST = await calculateFmsPlannedComplitionTime(companyUrl, duration, durationType, working, plannedCompletionTime, plannedCompletionTimeIST);
+            plannedCompletionTimeIST = await calculateFmsPlannedComplitionTime(companyUrl, duration, durationType, working, plannedCompletionTime, plannedCompletionTimeIST, decisionforPlannedComplitionTime);
 
             const currentDate = moment().tz('Asia/Kolkata').format();
             // Inserting data into the collection
@@ -261,7 +274,6 @@ submitFmsQuestionare.post('/submitFmsUserQAcreateTaskStep1', async (req, res) =>
                 isWhatsAppEnabled: isWhatsAppEnabled,
                 whatsappData: whatsappData,
                 at: null
-
             });
 
             console.log(result);

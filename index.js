@@ -161,6 +161,10 @@ app.use("/updateQualitySteps", updateQualitySteps);
 const fmsStatusWhatsapp = require("./routes/fmsSendStatus");
 app.use("/fmsStatusWhatsapp", fmsStatusWhatsapp);
 
+//----------------------------------------------------------------------//
+const fetchAllQuestions = require("./routes/fetchFormQuestions");
+app.use("/fetchAllQuestions", fetchAllQuestions);
+
 
 
 var server = app.listen(process.env.PORT, function () {

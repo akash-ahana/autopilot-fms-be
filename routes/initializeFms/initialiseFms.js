@@ -655,6 +655,55 @@ initialiseFms.post('/makeFmsLive' , async (req, res) => {
     
 })
 
+//API to make FMS Live 
+initialiseFms.post('/addStepNamesInitial' , async (req, res) => {
+
+ // Initialize variables to hold user details
+ let userName = "";
+ let userID = "";
+ let companyUrl = "";
+ let userEmail = "";
+
+ console.log(req.headers.authorization)
+   const authHeader = req.headers.authorization;
+   if (!authHeader || !authHeader.startsWith("Bearer")) {
+     errorLogger.log("error", `Token ${req.headers.authorization} is un-authorized as authorization header missing or malformed for api makeFmsLive`);
+     console.log("error: Authorization header missing or malformed");
+     return res.status(401).json({ error: 'Unauthorized' });
+   }
+   const token = authHeader.split(" ")[1];
+   infoLogger.log("info", `token ${token} is verified successfuly for the api makeFmsLive`);
+   console.log('token fetched is ' , token)
+
+ try {
+     // Fetch user details and company details based on the token
+     const response = await axios.post(process.env.MAIN_BE_URL, { token: token });
+     console.log('Fetched User Details and Company Details', response.data);
+     userName = response.data.emp_name;
+     userID = response.data.user_id;
+     companyUrl = response.data.verify_company_url;
+     userEmail = response.data.email_id;  
+     infoLogger.log("info", `${JSON.stringify(response.data)} logged in autopilot fms`)
+ } catch (error) {
+     console.error('Error posting data:', error);
+     errorLogger.log("error",`Failed to fetch user details due to ${error.message}`)
+     return res.status(500).send({ error: 'Error fetching user details', status: 500 });
+    
+ }
+
+ res.json({
+  "message" : `FMS Steps is Successfully Added`,
+  "status" : 200
+})
+
+
+
+    
+
+
+  
+})
+
 
 
 

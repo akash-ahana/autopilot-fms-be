@@ -126,6 +126,10 @@ const updateTask = require("./routes/updateFmsTask");
 app.use("/updateTask", updateTask);
 
 //----------------------------------------------------------------------//
+const updateDecisionTask = require("./routes/updateQualityStep");
+app.use("/updateDecisionTask", updateDecisionTask);
+
+//----------------------------------------------------------------------//
 const transferFmsTask = require("./routes/transferFmsTask");
 app.use("/transferFmsTask", transferFmsTask);
 

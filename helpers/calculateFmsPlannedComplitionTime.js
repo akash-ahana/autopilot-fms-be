@@ -14,8 +14,7 @@ const calculateFmsPlannedComplitionTime = async (companyUrl, duration, durationT
         if (durationType === "hrs") {
             if (working === "OUTSIDE") {
                 const fetchDate = decisionforPlannedComplitionTime.answer;
-
-
+                
                 if (decisionforPlannedComplitionTime.answerType === 'DATE' && decisionforPlannedComplitionTime.isStartDate === true) {
                     console.log("inside DATE function");
                     const currentDateISTAnswer = moment(fetchDate).tz('Asia/Kolkata');
@@ -72,19 +71,14 @@ const calculateFmsPlannedComplitionTime = async (companyUrl, duration, durationT
 
                             console.log("plannedCompletionTime inside the funtion", plannedCompletionTime);
                             let diffMillis = plannedCompletionTime.getTime() - shiftEndTime.getTime();
-                            console.log("diff", diffMillis);
                             let hours = Math.floor(diffMillis / (1000 * 60 * 60));
-                            console.log("hours", hours);
                             let minutes = Math.floor((diffMillis % (1000 * 60 * 60)) / (1000 * 60));
-                            console.log("minutes", minutes);
                             let seconds = Math.floor(((diffMillis % (1000 * 60 * 60)) % (1000 * 60)) / 1000);
-                            console.log("seconfs",seconds );
 
                             let overflowforThatDayIs = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
 
                             let nextDayCompletionTime = new Date(shiftStartTime);
 
-                            console.log("step0" , nextDayCompletionTime);
                             // Check if the planned completion time exceeds the shift end time
                             if (plannedCompletionTime.getDate() !== shiftEndTime.getDate() || plannedCompletionTime > shiftEndTime) {
                                 // Add only if the planned completion time exceeds the shift end time
@@ -95,12 +89,8 @@ const calculateFmsPlannedComplitionTime = async (companyUrl, duration, durationT
                             console.log("nextDayCompletionTime after checking date:", nextDayCompletionTime);
 
                             nextDayCompletionTime.setHours(nextDayCompletionTime.getHours() + hours);
-                            console.log("ste1", nextDayCompletionTime);
                             nextDayCompletionTime.setMinutes(nextDayCompletionTime.getMinutes() + minutes);
-                            console.log("ste2", nextDayCompletionTime);
                             nextDayCompletionTime.setSeconds(nextDayCompletionTime.getSeconds() + seconds);
-                            console.log("ste3", nextDayCompletionTime);
-
 
                             console.log('Final planned completion time (before adding offset):', nextDayCompletionTime);
 

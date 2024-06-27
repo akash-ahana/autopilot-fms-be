@@ -44,16 +44,11 @@ perfomanceCalculation.post("/fmsPerfomanceCalculation", async (req, res) => {
     const db = client.db(companyUrl);
     const collection = db.collection("fmsTasks");
 
-    const { fmsMasterID } = req.body;
+    const {fmsMasterID} = req.body;
 
-    console.log("fmsMasterId" , req.body);
+    const cursorFms = collection.find({ fmsMasterId: fmsMasterID });
 
-    // to find document
-    const query = { fmsMasterID };
-
-    console.log("fmsMasterID", fmsMasterID);
-
-    const taskDocuments = await collection.find(query).toArray();
+    const taskDocuments = await cursorFms.toArray(); 
 
     console.log("taskDocuments" , taskDocuments);
 
@@ -70,25 +65,27 @@ perfomanceCalculation.post("/fmsPerfomanceCalculation", async (req, res) => {
 
     // Percentage of delayed tasks - [ number of delayed tasks / number of completed tasks ]
 
-    const TotalDelayedTaskPercentage = ((TotalDelayedCount / TotalcompletedCount) * 100);
+    const TotalDelayedTaskPercentage = TotalcompletedCount ? ((TotalDelayedCount / TotalcompletedCount) * 100) : 0;
+
     console.log("TotalpendingCount", TotalpendingCount);
     console.log("TotaloverdueCount", TotaloverdueCount);
     console.log("TotalcompletedCount", TotalcompletedCount);
-
+    console.log("TotalDelayedTaskPercentage" , TotalDelayedTaskPercentage);
 
     res.json({ 
-    message: "Task fetched successfully", 
+    message: "performance calculated successfully", 
     TotalpendingCount: TotalpendingCount, 
     TotaloverdueCount: TotaloverdueCount, 
     TotalcompletedCount: TotalcompletedCount, 
     PercentageofOverdueTask: PercentageofOverdueTask, 
     TotalDelayedTaskPercentage: TotalDelayedTaskPercentage,
+    TotalDelayedTaskPercentage : TotalDelayedTaskPercentage,
     status: 200 
   });
 
   } catch (error) {
     console.error("Error Connecting to MongoDB", error);
-     return res.status(500).send({ error: "Failed to fetch performance calculation", status: 500 });
+     return res.status(400).send({ error: "Failed to fetch fms performance calculations", status: 400 });
   }
 });
 

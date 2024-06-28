@@ -713,8 +713,43 @@ initialiseFms.post('/addStepNamesInitial' , async (req, res) => {
     const collection = db.collection('fmsMaster');
     //infoLogger.log("info", `${userName} from company ${companyUrl}  hit the api makeFmsLive`)
     //const filter = { fmsName : req.body.fmsName };
+
+    ////
+    // Prepare the update object using a for loop instead of forEach
+    // const updates = {};
+    // for (let i = 0; i < req.body.fmsSteps.length; i++) {
+    //     updates[`steps.${i}.id`] = stepIds[i+1];
+    //     updates[`steps.${i}.content`] = fmsSteps[i]; // Assuming each step has a content field
+    
+    function accepTheStepWhats(array) {
+     // Check if the input is an array
+      if (!Array.isArray(array)) {
+        throw new Error("Input must be an array");
+      }
+      // Initialize an empty array to hold the converted objects
+      let result = [];
+      // Iterate over each element in the array
+      array.forEach((element, index) => {
+        // Create an object for each element
+        const obj = {
+          what: element,
+          id: index + 1, // Consecutive ID starting from 1
+        };
+
+        // Add the object to the result array
+        result.push(obj);
+      });
+      return result;
+    }
+    // }
+    let inputWhats = req.body.fmsSteps
+    let StepWhatandId = accepTheStepWhats(inputWhats)
+
+
+
+
     const filter = { fmsMasterId: req.body.fmsMasterId };
-    const update = { $set: { fmsInitialStepNames: req.body.fmsSteps } };   //fmsLive means that fms is active
+    const update = { $set: { fmsSteps: StepWhatandId } };   //fmsLive means that fms is active
     const options = { upsert: true };
 
     const result = await collection.updateOne(filter, update, options);

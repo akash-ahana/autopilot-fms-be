@@ -749,7 +749,7 @@ initialiseFms.post('/addStepNamesInitial' , async (req, res) => {
 
 
     const filter = { fmsMasterId: req.body.fmsMasterId };
-    const update = { $set: { fmsSteps: StepWhatandId } };   //fmsLive means that fms is active
+    const update = { $set: { fmsWhats: StepWhatandId } };   //fmsLive means that fms is active
     const options = { upsert: true };
 
     const result = await collection.updateOne(filter, update, options);

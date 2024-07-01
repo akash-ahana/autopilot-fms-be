@@ -507,7 +507,7 @@ for(let i = 1; i<=fmsMasterDocument.fmsSteps.length;i++) {
 
 
 // fetch all the questions
-getFms.get("/fetchFormQuestions", async (req, res) => {
+getFms.post("/fetchFormQuestions", async (req, res) => {
   // Initialize variables to hold user details
   let userName = "";
   let userID = "";

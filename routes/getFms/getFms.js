@@ -546,8 +546,8 @@ getFms.get("/fetchFormQuestions", async (req, res) => {
     const db = client.db(companyUrl);
     const collection = db.collection("fmsMaster");
 
-    const {fmsMasterID} = req.body;
-    const cursorFms = collection.find({ fmsMasterId: fmsMasterID });
+    const {fmsMasterId} = req.body;
+    const cursorFms = collection.find({ fmsMasterId: fmsMasterId });
 
     const document = await cursorFms.toArray(); 
     console.log("docuemnt" , document);
